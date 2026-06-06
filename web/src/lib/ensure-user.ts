@@ -3,7 +3,7 @@ import { getUserById, upsertUser } from "@/lib/db";
 import type { User } from "@/types";
 
 /**
- * Ensures the signed-in Clerk user exists in Supabase.
+ * Ensures the signed-in Clerk user exists in PostgreSQL.
  * Use this for local dev when Clerk webhooks cannot reach localhost.
  * In production, webhooks still sync users; this is a safe idempotent fallback.
  */
