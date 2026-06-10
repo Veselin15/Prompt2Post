@@ -1,38 +1,67 @@
 const BASE = "https://gen.pollinations.ai/image";
 
 const STYLE_SUFFIX: Record<string, string> = {
-  cinematic:  ", cinematic photography, film grain, dramatic lighting",
-  vibrant:    ", vibrant colors, high saturation, punchy contrast",
-  minimalist: ", minimalist design, clean composition, lots of white space",
-  neon:       ", neon glow, cyberpunk aesthetic, dark background",
-  vintage:    ", vintage film look, muted tones, retro grain",
-  dreamy:     ", dreamy soft light, bokeh, pastel palette",
-  flat:       ", flat design illustration, vector art, bold outlines",
-  bold:       ", bold graphic design, strong contrast, powerful composition",
+  cinematic:   ", cinematic anamorphic lens photography, dramatic chiaroscuro lighting, shallow depth of field, rich Kodak film grain, professional color grade, ultra-detailed, highly photorealistic, 8k resolution, masterpiece composition",
+  vibrant:     ", ultra-vibrant commercial photography, HDR color grading, punchy saturated palette, perfect dynamic range, razor-sharp details, professional retouching, photorealistic, studio quality, 8k",
+  minimalist:  ", minimalist fine-art photography, expansive negative space, soft diffused natural light, clean geometric composition, muted restrained palette, architectural precision, museum-quality print, highly detailed",
+  neon:        ", neon-lit cyberpunk scene, wet reflective surfaces, volumetric light beams, deep dramatic shadows, chromatic aberration, long-exposure night photography, ultra-detailed, 8k, photorealistic",
+  vintage:     ", analog film photography, warm Kodachrome grain, muted nostalgic color palette, deliberate light leak, vignette edges, 1970s retro aesthetic, faded warmth, museum-quality scan, timeless",
+  dreamy:      ", dreamy soft-focus photography, golden-hour bokeh balls, ethereal lens flare, warm pastel palette, romantic hazy atmosphere, fairy-tale luminosity, highly detailed, professional photography",
+  flat:        ", editorial flat design illustration, bold vector graphic, Swiss international grid, geometric shapes, crisp clean lines, Bauhaus influence, limited but deliberate color palette, print-ready quality",
+  bold:        ", bold dramatic photography, extreme high contrast, powerful graphic composition, strong geometric forms, striking monumental scale, heroic camera angle, ultra-detailed, photorealistic, 8k",
 };
+
+
+export interface ImageOptions {
+  /** Visual style keyword (cinematic, neon, …) → appended style cues. */
+  style: string;
+  /** Shared palette description from the planner, for cross-slide cohesion. */
+  colorMood?: string;
+  /** Source generation dimensions (already aspect-correct, downscaled for speed). */
+  width?: number;
+  height?: number;
+}
+
+/** Generation dimensions — exact Instagram ratios, scaled only when above `cap`. */
+export function genDimensions(
+  targetW: number,
+  targetH: number,
+  cap = 1536
+): { width: number; height: number } {
+  // Native Instagram sizes (1080-wide) — generate at full resolution, no downscale
+  if (targetW <= cap && targetH <= cap) {
+    return { width: targetW, height: targetH };
+  }
+  const factor = cap / Math.max(targetW, targetH);
+  const round8 = (n: number) => Math.max(256, Math.round((n * factor) / 8) * 8);
+  return { width: round8(targetW), height: round8(targetH) };
+}
 
 export function buildImageUrl(
   prompt: string,
-  style: string,
-  seed: number,
-  width = 768,
-  height = 768
+  opts: ImageOptions,
+  seed: number
 ): string {
-  const suffix = STYLE_SUFFIX[style] ?? "";
-  const full = `${prompt}${suffix}`;
+  const suffix = STYLE_SUFFIX[opts.style] ?? "";
+  const palette = opts.colorMood ? `, ${opts.colorMood} color palette` : "";
+  const full = `${prompt}${suffix}${palette}`;
   const encoded = encodeURIComponent(full);
   const key = process.env.POLLINATIONS_API_KEY ?? "";
   const keyParam = key ? `&key=${encodeURIComponent(key)}` : "";
-  return `${BASE}/${encoded}?model=flux&width=${width}&height=${height}&nologo=true&seed=${seed}${keyParam}`;
+  const width = opts.width ?? 768;
+  const height = opts.height ?? 768;
+  // enhance=true  → Pollinations rewrites the prompt through an LLM for better Flux results
+  // private=true  → image won't appear in the public Pollinations gallery
+  return `${BASE}/${encoded}?model=flux&width=${width}&height=${height}&nologo=true&enhance=true&private=true&seed=${seed}${keyParam}`;
 }
 
 export async function fetchImageBuffer(
   prompt: string,
-  style: string,
+  opts: ImageOptions,
   seed: number,
   retries = 3
 ): Promise<Buffer> {
-  const url = buildImageUrl(prompt, style, seed);
+  const url = buildImageUrl(prompt, opts, seed);
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < retries; attempt++) {
@@ -53,6 +82,11 @@ export async function fetchImageBuffer(
         continue;
       }
       const ab = await res.arrayBuffer();
+      // Reject stub/error images — a real photo is always well above 20 KB
+      if (ab.byteLength < 20_000) {
+        lastError = new Error(`Response too small (${ab.byteLength} bytes) — likely a stub image`);
+        continue;
+      }
       return Buffer.from(ab);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
@@ -61,13 +95,14 @@ export async function fetchImageBuffer(
 
   // Fallback: return a placeholder gradient buffer (SVG → PNG via Sharp)
   console.warn(`Pollinations unavailable (${lastError?.message}), using gradient placeholder`);
-  return generateGradientBuffer(prompt, style, seed);
+  return generateGradientBuffer(opts.style, seed, opts.width ?? 1080, opts.height ?? 1080);
 }
 
 async function generateGradientBuffer(
-  _prompt: string,
   style: string,
-  seed: number
+  seed: number,
+  width: number,
+  height: number
 ): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
   const palettes: Record<string, [string, string, string]> = {
@@ -83,7 +118,7 @@ async function generateGradientBuffer(
   const [c1, c2, c3] = palettes[style] ?? palettes.cinematic;
   const rng = mulberry32(seed);
 
-  const svg = `<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
+  const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="g" x1="${rng().toFixed(2)}" y1="0" x2="${rng().toFixed(2)}" y2="1">
         <stop offset="0%" stop-color="${c1}"/>
@@ -92,12 +127,12 @@ async function generateGradientBuffer(
       </linearGradient>
       <filter id="blur"><feGaussianBlur stdDeviation="18"/></filter>
     </defs>
-    <rect width="1080" height="1080" fill="url(#g)"/>
-    <circle cx="${Math.floor(rng() * 800 + 140)}" cy="${Math.floor(rng() * 800 + 140)}"
+    <rect width="${width}" height="${height}" fill="url(#g)"/>
+    <circle cx="${Math.floor(rng() * width * 0.7 + width * 0.15)}" cy="${Math.floor(rng() * height * 0.7 + height * 0.15)}"
       r="${Math.floor(rng() * 200 + 100)}" fill="${c2}" opacity="0.35" filter="url(#blur)"/>
   </svg>`;
 
-  return sharp(Buffer.from(svg)).resize(1080, 1080).jpeg({ quality: 90 }).toBuffer();
+  return sharp(Buffer.from(svg)).resize(width, height).jpeg({ quality: 90 }).toBuffer();
 }
 
 function mulberry32(seed: number) {

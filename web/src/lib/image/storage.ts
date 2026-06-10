@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, writeFile, readFile, rm } from "fs/promises";
 import path from "path";
 import JSZip from "jszip";
 
@@ -13,19 +13,65 @@ async function ensureDir(dir: string) {
   await mkdir(dir, { recursive: true });
 }
 
+function slideFilename(slideNumber: number): string {
+  return `slide_${String(slideNumber).padStart(2, "0")}.jpg`;
+}
+
+function backgroundFilename(slideNumber: number): string {
+  return `bg_${String(slideNumber).padStart(2, "0")}.jpg`;
+}
+
 export async function uploadSlideImage(
   postId: string,
   slideNumber: number,
   buffer: Buffer
 ): Promise<string> {
-  const filename = `slide_${String(slideNumber).padStart(2, "0")}.jpg`;
-  const relativePath = `posts/${postId}/${filename}`;
+  const relativePath = `posts/${postId}/${slideFilename(slideNumber)}`;
   const fullPath = path.join(STORAGE_ROOT, relativePath);
 
   await ensureDir(path.dirname(fullPath));
   await writeFile(fullPath, buffer);
 
   return publicUrl(relativePath);
+}
+
+/**
+ * Persist the raw AI background (no text overlay) so a slide's copy can later be
+ * re-composited cheaply — without another image-generation call. Stored next to
+ * the composited slide as `bg_NN.jpg`.
+ */
+export async function uploadSlideBackground(
+  postId: string,
+  slideNumber: number,
+  buffer: Buffer
+): Promise<void> {
+  const fullPath = path.join(STORAGE_ROOT, `posts/${postId}/${backgroundFilename(slideNumber)}`);
+  await ensureDir(path.dirname(fullPath));
+  await writeFile(fullPath, buffer);
+}
+
+/** Read a stored raw background, or null when one was never saved (older posts). */
+export async function readSlideBackground(
+  postId: string,
+  slideNumber: number
+): Promise<Buffer | null> {
+  try {
+    return await readFile(path.join(STORAGE_ROOT, `posts/${postId}/${backgroundFilename(slideNumber)}`));
+  } catch {
+    return null;
+  }
+}
+
+/** Read a composited slide image back from disk (used when rebuilding a ZIP). */
+export async function readSlideImage(
+  postId: string,
+  slideNumber: number
+): Promise<Buffer | null> {
+  try {
+    return await readFile(path.join(STORAGE_ROOT, `posts/${postId}/${slideFilename(slideNumber)}`));
+  } catch {
+    return null;
+  }
 }
 
 export async function uploadZip(
@@ -47,4 +93,23 @@ export async function uploadZip(
   await writeFile(fullPath, zipBuffer);
 
   return publicUrl(relativePath);
+}
+
+/**
+ * Rebuild the downloadable ZIP from the composited slides currently on disk.
+ * Best-effort: returns the existing/new URL, skipping any slide that can't be read.
+ */
+export async function rebuildZip(postId: string, slideCount: number): Promise<string> {
+  const buffers: { name: string; data: Buffer }[] = [];
+  for (let n = 1; n <= slideCount; n++) {
+    const data = await readSlideImage(postId, n);
+    if (data) buffers.push({ name: slideFilename(n), data });
+  }
+  return uploadZip(postId, buffers);
+}
+
+/** Remove every file belonging to a post (called when the post is deleted). */
+export async function deletePostFiles(postId: string): Promise<void> {
+  const dir = path.join(STORAGE_ROOT, "posts", postId);
+  await rm(dir, { recursive: true, force: true });
 }

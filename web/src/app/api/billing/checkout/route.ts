@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createCheckoutSession,
   getOrCreateCustomer,
+  isStripeConfigured,
   PRICE_IDS,
 } from "@/lib/stripe";
 import { getUserById, updateUserStripeId } from "@/lib/db";
@@ -10,6 +11,10 @@ import { getUserById, updateUserStripeId } from "@/lib/db";
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!isStripeConfigured()) {
+    return NextResponse.json({ error: "Billing is not configured yet" }, { status: 503 });
+  }
 
   const { plan } = await req.json();
   if (plan !== "pro" && plan !== "creator") {

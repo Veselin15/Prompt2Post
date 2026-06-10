@@ -7,6 +7,11 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/stripe",
   "/api/clerk/webhook",
   "/api/files(.*)",
+  // Public read-only share pages (token-gated by unguessable URL)
+  "/p/(.*)",
+  // Cron-triggered scheduled publishing — authenticates itself via CRON_SECRET
+  // (or a signed-in user for the local-dev fallback).
+  "/api/instagram/schedule/run",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

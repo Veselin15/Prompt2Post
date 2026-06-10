@@ -1,12 +1,31 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 import { planStructure, writeContent } from "@/lib/ai/groq";
-import { fetchImageBuffer } from "@/lib/image/pollinations";
+import { fetchImageBuffer, genDimensions } from "@/lib/image/pollinations";
 import { composeSlide } from "@/lib/image/compositor";
-import { uploadSlideImage, uploadZip } from "@/lib/image/storage";
-import { createPost, incrementUserPostCount, updatePostSlides } from "@/lib/db";
+import { uploadSlideImage, uploadSlideBackground, uploadZip, deletePostFiles } from "@/lib/image/storage";
+import {
+  createPost,
+  deletePost,
+  incrementUserPostCount,
+  decrementUserPostCount,
+  updatePostSlides,
+} from "@/lib/db";
 import { ensureDbUser } from "@/lib/ensure-user";
-import { PLAN_LIMITS } from "@/types";
+import {
+  PLAN_LIMITS,
+  POST_FORMATS,
+  DEFAULT_FORMAT,
+  resolveAccent,
+  resolveHandle,
+  resolveTextAmount,
+  resolveFontTheme,
+  resolveHeadlineCase,
+  resolveTextAlign,
+  resolveFormat,
+  resolveTemplate,
+  resolveLanguage,
+} from "@/types";
 import type { GenerateEvent, SlideData } from "@/types";
 
 export const runtime = "nodejs";
@@ -25,7 +44,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { topic, tone, style, numSlides } = await req.json();
+  const {
+    topic, tone, style, numSlides, format, template, accentColor, handle,
+    textAmount, fontTheme, headlineCase, textAlign, language,
+  } = await req.json();
   if (!topic?.trim()) {
     return new Response(sse({ type: "error", error: "Topic is required" }), {
       status: 400,
@@ -41,7 +63,12 @@ export async function POST(req: NextRequest) {
     await writer.write(enc.encode(sse(event)));
   };
 
-  // Run the pipeline async so we can stream
+  // Run the pipeline async so we can stream.
+  // These live outside the try so the catch can clean up / refund on failure.
+  let createdPost: { id: string } | null = null;
+  let allSlides: SlideData[] = [];
+  let composedSlides: SlideData[] = [];
+
   (async () => {
     try {
       // ── 1. Check plan limits ──────────────────────────────────────────────
@@ -65,13 +92,41 @@ export async function POST(req: NextRequest) {
         ? Math.min(Number(numSlides), limits.max_slides)
         : undefined;
 
+      // Gate format/template hints: only forward them to the planner if the
+      // user's plan allows the requested value — otherwise let AI auto-pick.
+      const hintFormat = limits.formats.includes(resolveFormat(format))
+        ? (format as string)
+        : "";
+      const hintTemplate = limits.templates.includes(resolveTemplate(template))
+        ? (template as string)
+        : "";
+
       // ── 2. Plan structure ─────────────────────────────────────────────────
       await send({ type: "status", message: "AI is planning your post structure…", progress: 8 });
       const structure = await planStructure(topic, {
         tone,
         style,
         numSlides: clampedSlides,
+        format: hintFormat,
+        template: hintTemplate,
       });
+
+      // Hard-gate: even if the AI picked a gated value, clamp to plan limits.
+      if (!limits.formats.includes(structure.format)) structure.format = DEFAULT_FORMAT;
+      if (!limits.templates.includes(structure.template)) structure.template = "classic";
+
+      // User customisations (not LLM-decided) — applied on top of the plan,
+      // but only when the plan allows the requested feature.
+      structure.accent_color = resolveAccent(accentColor);
+      structure.handle = limits.watermark ? resolveHandle(handle) : "";
+      structure.text_amount = limits.text_amounts.includes(resolveTextAmount(textAmount))
+        ? resolveTextAmount(textAmount)
+        : "balanced";
+      structure.font_theme = limits.font_themes.includes(resolveFontTheme(fontTheme))
+        ? resolveFontTheme(fontTheme)
+        : "modern";
+      structure.headline_case = resolveHeadlineCase(headlineCase);
+      structure.text_align = resolveTextAlign(textAlign);
       await send({ type: "structure", structure, progress: 16 });
 
       // ── 3. Write creative content ─────────────────────────────────────────
@@ -81,7 +136,10 @@ export async function POST(req: NextRequest) {
         structure.tone,
         structure.style,
         structure.post_type,
-        structure.num_slides
+        structure.num_slides,
+        structure.color_mood,
+        structure.text_amount,
+        resolveLanguage(language)
       );
       const { slides: rawSlides, ...contentMeta } = content;
       await send({ type: "content", content: contentMeta, progress: 32 });
@@ -98,48 +156,92 @@ export async function POST(req: NextRequest) {
         content,
         slides: rawSlides,
       });
+      createdPost = post;
+      allSlides = rawSlides;
 
       await incrementUserPostCount(userId);
 
       // ── 5. Generate + compose slides ──────────────────────────────────────
-      const composedSlides: SlideData[] = [];
-      const imageBuffers: { name: string; data: Buffer }[] = [];
       const total = rawSlides.length;
+      // Pre-allocate so parallel writes land in the right index slots
+      composedSlides = new Array(total);
+      const imageBuffers: { name: string; data: Buffer }[] = new Array(total);
 
-      for (let i = 0; i < rawSlides.length; i++) {
-        const slide = rawSlides[i];
-        const progressBase = 34;
-        const progressPerSlide = 56 / total;
-        const progress = Math.round(progressBase + i * progressPerSlide);
+      const fmt = POST_FORMATS[structure.format] ?? POST_FORMATS[DEFAULT_FORMAT];
+      const genDims = genDimensions(fmt.width, fmt.height);
 
+      const progressBase = 34;
+      const progressPerSlide = 56 / total;
+
+      /** Process a single slide: fetch → composite → upload → emit SSE. */
+      const processSlide = async (slide: SlideData, i: number) => {
         await send({
           type: "status",
           message: `Generating image ${i + 1}/${total}…`,
-          progress,
+          progress: Math.round(progressBase + i * progressPerSlide),
         });
 
-        // Fetch image from Pollinations (with fallback)
         const rawBuf = await fetchImageBuffer(
           slide.image_prompt,
-          structure.style,
+          {
+            style: structure.style,
+            colorMood: structure.color_mood,
+            width: genDims.width,
+            height: genDims.height,
+          },
           i + 1
         );
 
-        // Composite text overlay with Sharp
-        const finalBuf = await composeSlide(rawBuf, slide, i + 1, total);
+        // Keep the raw AI background so the user can later re-edit this slide's
+        // copy and re-composite without spending another image generation.
+        await uploadSlideBackground(post.id, i + 1, rawBuf);
 
-        // Upload to Supabase Storage
+        const finalBuf = await composeSlide(rawBuf, slide, {
+          width: fmt.width,
+          height: fmt.height,
+          template: structure.template,
+          accentColor: structure.accent_color,
+          handle: structure.handle,
+          textAmount: structure.text_amount,
+          fontTheme: structure.font_theme,
+          headlineCase: structure.headline_case,
+          textAlign: structure.text_align,
+        });
+
         const imageUrl = await uploadSlideImage(post.id, i + 1, finalBuf);
-        imageBuffers.push({ name: `slide_${String(i + 1).padStart(2, "0")}.jpg`, data: finalBuf });
+        imageBuffers[i] = { name: `slide_${String(i + 1).padStart(2, "0")}.jpg`, data: finalBuf };
 
         const composedSlide: SlideData = { ...slide, image_url: imageUrl };
-        composedSlides.push(composedSlide);
+        composedSlides[i] = composedSlide;
 
         await send({
           type: "slide",
           slide: { ...composedSlide, index: i, total },
           progress: Math.round(progressBase + (i + 1) * progressPerSlide),
         });
+      };
+
+      if (limits.priority) {
+        // ⚡ Creator — all images in parallel (true priority benefit)
+        await send({
+          type: "status",
+          message: "⚡ Priority — generating all images in parallel…",
+          progress: 34,
+        });
+        // allSettled: let every slide finish before surfacing the first error,
+        // so the catch block sees the true partial-success state.
+        const results = await Promise.allSettled(
+          rawSlides.map((slide, i) => processSlide(slide, i))
+        );
+        const failure = results.find(
+          (r): r is PromiseRejectedResult => r.status === "rejected"
+        );
+        if (failure) throw failure.reason;
+      } else {
+        // Free / Pro — sequential generation
+        for (let i = 0; i < rawSlides.length; i++) {
+          await processSlide(rawSlides[i], i);
+        }
       }
 
       // ── 6. Build ZIP (Pro+ only) ───────────────────────────────────────────
@@ -160,7 +262,35 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("Generate pipeline error:", err);
       const message = err instanceof Error ? err.message : "Generation failed";
-      await send({ type: "error", error: message });
+
+      // Don't burn a monthly credit on a failed run: if nothing was produced,
+      // remove the empty post and refund the credit. If some slides finished,
+      // keep them (post + credit stand) so the user doesn't lose the work.
+      let refunded = false;
+      try {
+        if (createdPost) {
+          const finished = composedSlides.filter(Boolean);
+          if (finished.length === 0) {
+            await deletePost(createdPost.id, userId);
+            await deletePostFiles(createdPost.id).catch(() => {});
+            await decrementUserPostCount(userId);
+            refunded = true;
+          } else {
+            // Persist whatever completed, keeping slide order intact.
+            await updatePostSlides(
+              createdPost.id,
+              allSlides.map((s, i) => composedSlides[i] ?? s)
+            );
+          }
+        }
+      } catch (cleanupErr) {
+        console.error("Generate cleanup error:", cleanupErr);
+      }
+
+      await send({
+        type: "error",
+        error: refunded ? `${message} Your post credit was not used.` : message,
+      });
     } finally {
       await writer.close();
     }

@@ -1,5 +1,5 @@
-import { SignIn } from "@clerk/nextjs";
-import { Sparkles } from "lucide-react";
+import { ClerkLoaded, ClerkLoading, SignIn } from "@clerk/nextjs";
+import { Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function SignInPage() {
@@ -12,18 +12,26 @@ export default function SignInPage() {
         <Sparkles className="w-5 h-5 text-brand-400" />
         <span className="gradient-text">Prompt2Post</span>
       </Link>
-      <SignIn
-        appearance={{
-          variables: {
-            colorBackground: "#111118",
-            colorInputBackground: "#1a1a24",
-            colorText: "#ffffff",
-            colorTextSecondary: "rgba(255,255,255,0.55)",
-            colorPrimary: "#6750f8",
-            borderRadius: "14px",
-          },
-        }}
-      />
+      <ClerkLoading>
+        <div className="flex flex-col items-center gap-3 relative z-10 py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+          <p className="text-sm text-white/50">Loading sign in…</p>
+        </div>
+      </ClerkLoading>
+      <ClerkLoaded>
+        <SignIn
+          appearance={{
+            variables: {
+              colorBackground: "#111118",
+              colorInputBackground: "#1a1a24",
+              colorText: "#ffffff",
+              colorTextSecondary: "rgba(255,255,255,0.55)",
+              colorPrimary: "#6750f8",
+              borderRadius: "14px",
+            },
+          }}
+        />
+      </ClerkLoaded>
     </div>
   );
 }

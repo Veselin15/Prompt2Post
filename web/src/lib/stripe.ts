@@ -11,6 +11,15 @@ export function getStripe(): Stripe {
   return _stripe;
 }
 
+/** True when all Stripe env vars needed for checkout are present */
+export function isStripeConfigured(): boolean {
+  return !!(
+    process.env.STRIPE_SECRET_KEY &&
+    process.env.STRIPE_PRO_PRICE_ID &&
+    process.env.STRIPE_CREATOR_PRICE_ID
+  );
+}
+
 // Price IDs from Stripe Dashboard — set in env
 export const PRICE_IDS = {
   pro: process.env.STRIPE_PRO_PRICE_ID ?? "",

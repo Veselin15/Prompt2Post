@@ -1,180 +1,306 @@
 /**
- * compositor.ts – Server-side image compositing with Sharp + SVG overlays.
+ * compositor.ts – Instagram-grade text compositing with Sharp.
  *
- * Takes a raw image buffer and renders:
- *  1. A gradient backdrop band (top / center / bottom)
- *  2. A bold headline (large text)
- *  3. A body line (smaller supporting text)
- *  4. Optional slide counter badge (e.g. "3/5")
- *
- * All rendering is done purely with Sharp + SVG — no canvas, no headless browser.
+ * Text is rendered to vector paths from the bundled fonts (Poppins + DM Serif),
+ * so output is identical on every platform with no system-font dependency.
+ * Supports: four overlay templates, any aspect ratio, accent colour, optional
+ * @handle watermark, plus per-post "look" controls — font
+ * theme (modern/editorial), headline case, text alignment, and text amount.
  */
 
 import sharp from "sharp";
-import type { SlideData } from "@/types";
+import type {
+  SlideData,
+  OverlayTemplate,
+  TextAmount,
+  FontTheme,
+  HeadlineCase,
+  TextAlign,
+} from "@/types";
+import {
+  resolveAccent,
+  resolveTemplate,
+  resolveTextAmount,
+  resolveFontTheme,
+  resolveHeadlineCase,
+  resolveTextAlign,
+} from "@/types";
+import { getFont, fontsAvailable } from "./fonts";
+import { lineWidth, capHeight, wrap, fit, linePath } from "./textlayout";
 
-const OUTPUT_SIZE = 1080;
-const FONT_STACK = "Arial, Helvetica, sans-serif";
-
-const SIZE_MAP = {
-  small:  { headline: 42, body: 24 },
-  medium: { headline: 58, body: 28 },
-  large:  { headline: 76, body: 32 },
-};
-
-// Rough char-width heuristic (works for proportional fonts at ~0.55× of size)
-function estimateLineWidth(text: string, fontSize: number): number {
-  return text.length * fontSize * 0.55;
+export interface ComposeOptions {
+  width: number;
+  height: number;
+  template?: OverlayTemplate;
+  accentColor?: string;
+  handle?: string;
+  textAmount?: TextAmount;
+  fontTheme?: FontTheme;
+  headlineCase?: HeadlineCase;
+  textAlign?: TextAlign;
 }
 
-function wrapText(text: string, fontSize: number, maxWidth: number): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let current = "";
+interface RenderInput {
+  W: number;
+  H: number;
+  headline: string;
+  body: string;
+  kicker: string;
+  position: "top" | "center" | "bottom";
+  textSize: "small" | "medium" | "large";
+  template: OverlayTemplate;
+  accent: string;
+  handle: string;
+  textAmount: TextAmount;
+  fontTheme: FontTheme;
+  headlineCase: HeadlineCase;
+  textAlign: TextAlign;
+}
 
-  for (const word of words) {
-    const test = current ? `${current} ${word}` : word;
-    if (estimateLineWidth(test, fontSize) <= maxWidth) {
-      current = test;
+const BODY_MAX_LINES: Record<TextAmount, number> = { minimal: 0, balanced: 2, detailed: 5 };
+/** Body font size (px at 1080 px width) per text-amount tier. */
+const BODY_FONT_PX:  Record<TextAmount, number> = { minimal: 0, balanced: 30, detailed: 38 };
+
+function renderOverlay(input: RenderInput): string {
+  const {
+    W, H, headline, body, kicker, position, textSize, template, accent, handle,
+    textAmount, fontTheme, headlineCase, textAlign,
+  } = input;
+
+  const SB = getFont("semibold");
+  const HF = fontTheme === "editorial" ? getFont("serif") : getFont("extrabold");
+
+  const isQuote = template === "quote";
+  const align: TextAlign = isQuote ? "center" : textAlign;
+
+  const scale = W / 1080;
+  const padX = Math.round(W * 0.07);
+  const maxW = W - padX * 2;
+  const cx = W / 2;
+  const leftX = padX;
+
+  const kSize = Math.round(26 * scale);
+  const kTrack = 4 * scale;
+  const kCapH = Math.round(kSize * 0.8);
+  // Body font size and line-height scale with the chosen text-amount tier
+  const bodyPx  = BODY_FONT_PX[textAmount] || 30;
+  const bodyMax = Math.round(bodyPx * scale);
+  const handleSize = Math.round(26 * scale);
+  const barW = Math.round(72 * scale);
+  const barH = Math.round(7 * scale);
+
+  const showBar = template === "classic" || template === "minimal";
+
+  // Aligned line emitter (with optional soft shadow).
+  const emit = (
+    font: ReturnType<typeof getFont>,
+    text: string,
+    size: number,
+    baseline: number,
+    fill: string,
+    opts: { shadow?: number; opacity?: number; tracking?: number } = {}
+  ): string => {
+    const { shadow = 0, opacity = 1, tracking = 0 } = opts;
+    const w = lineWidth(font, text, size, tracking);
+    const x = align === "left" ? leftX : cx - w / 2;
+    let out = "";
+    if (shadow) out += linePath(font, text, x + shadow, baseline + shadow, size, "#000", 0.45, tracking);
+    out += linePath(font, text, x, baseline, size, fill, opacity, tracking);
+    return out;
+  };
+
+  // Headline (auto-fit). text_size nudges the upper bound; editorial serif runs a touch larger.
+  const headlineText = headlineCase === "upper" ? headline.toUpperCase() : headline;
+  const capBoost = (textSize === "large" ? 8 : textSize === "small" ? -10 : 0) + (fontTheme === "editorial" ? 6 : 0);
+  const hMaxLines = position === "center" || isQuote ? 4 : 3;
+  const hCap = (isQuote ? 88 : 96) + capBoost;
+  const { lines: hLines, size: hSize } = fit(
+    HF, headlineText, Math.round(hCap * scale), Math.round(46 * scale), maxW, hMaxLines
+  );
+  const hLead = Math.round(hSize * 1.07);
+  const hCapH = capHeight(HF, hSize);
+
+  const maxBody = BODY_MAX_LINES[textAmount];
+  const bodyLines = body && maxBody > 0 ? wrap(SB, body, bodyMax, maxW).slice(0, maxBody) : [];
+  // Tighter leading for detailed (more lines) so the block stays on-screen
+  const bodyLead = Math.round(bodyMax * (textAmount === "detailed" ? 1.28 : 1.34));
+
+  const gapKicker = kicker ? Math.round(20 * scale) : 0;
+  const gapBar    = showBar ? Math.round(26 * scale) : 0;
+  // Slightly more breathing room before the body when there's more of it
+  const gapBody   = bodyLines.length ? Math.round((textAmount === "detailed" ? 28 : 24) * scale) : 0;
+  const quoteMarkH = isQuote ? Math.round(110 * scale) : 0;
+  const gapQuote = isQuote ? Math.round(10 * scale) : 0;
+
+  const blockH =
+    quoteMarkH + gapQuote +
+    (kicker ? kCapH + gapKicker : 0) +
+    hLines.length * hLead +
+    (showBar ? gapBar + barH : 0) +
+    (bodyLines.length ? gapBody + bodyLines.length * bodyLead : 0);
+
+  const handleReserve = handle ? Math.round(H * 0.05) : 0;
+  let topY: number;
+  if (position === "top") topY = Math.round(H * 0.085);
+  else if (position === "center") topY = Math.round((H - blockH) / 2);
+  else topY = H - Math.round(H * 0.075) - handleReserve - blockH;
+
+  // ── Backing treatment ──────────────────────────────────────────────────
+  // For detailed text, deepen the scrim so body lines stay legible
+  const scrimDepth = textAmount === "detailed" ? 0.92 : 0.86;
+  const scrimPad   = textAmount === "detailed" ? Math.round(140 * scale) : Math.round(120 * scale);
+
+  const defs: string[] = [];
+  let backing = "";
+  if (template === "classic" || isQuote) {
+    const bandTop = Math.max(0, topY - Math.round(60 * scale));
+    if (position === "center" || isQuote) {
+      const centerOpacity = textAmount === "detailed" ? 0.80 : 0.72;
+      const bandH = Math.min(H, topY + blockH + Math.round(80 * scale)) - bandTop;
+      defs.push(`<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000" stop-opacity="0"/>
+        <stop offset="22%" stop-color="#000" stop-opacity="${centerOpacity}"/>
+        <stop offset="78%" stop-color="#000" stop-opacity="${centerOpacity}"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>`);
+      backing = `<rect x="0" y="${bandTop}" width="${W}" height="${bandH}" fill="url(#g)"/>`;
+    } else if (position === "top") {
+      defs.push(`<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>`);
+      backing = `<rect x="0" y="0" width="${W}" height="${topY + blockH + Math.round(80 * scale)}" fill="url(#g)"/>`;
     } else {
-      if (current) lines.push(current);
-      current = word;
+      defs.push(`<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="${scrimDepth}"/></linearGradient>`);
+      const y0 = Math.max(0, bandTop - scrimPad);
+      backing = `<rect x="0" y="${y0}" width="${W}" height="${H - y0}" fill="url(#g)"/>`;
+    }
+  } else if (template === "banner") {
+    const cardPad = Math.round(46 * scale);
+    const cardX = Math.round(W * 0.05);
+    const cardY = topY - cardPad;
+    const cardW = W - cardX * 2;
+    const cardH = blockH + cardPad * 2;
+    const r = Math.round(28 * scale);
+    backing =
+      `<rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="${r}" fill="#0b0a14" opacity="0.82"/>` +
+      `<rect x="${cardX}" y="${cardY}" width="${Math.round(10 * scale)}" height="${cardH}" rx="${Math.round(5 * scale)}" fill="${accent}"/>`;
+  } else {
+    // minimal – soft vignette only, legibility comes from text shadows
+    defs.push(`<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000" stop-opacity="${position === "top" ? 0.5 : 0}"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="${position === "top" ? 0 : 0.5}"/></linearGradient>`);
+    backing = `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#g)"/>`;
+  }
+
+  // ── Text ───────────────────────────────────────────────────────────────
+  const els: string[] = [];
+  let y = topY;
+  const headlineShadow = template === "minimal" ? Math.round(3 * scale) : Math.round(2 * scale);
+
+  if (isQuote) {
+    const qSize = Math.round(150 * scale);
+    const qW = lineWidth(HF, "“", qSize);
+    els.push(linePath(HF, "“", cx - qW / 2, y + capHeight(HF, qSize), qSize, accent, 0.9));
+    y += quoteMarkH + gapQuote;
+  }
+
+  if (kicker) {
+    els.push(emit(SB, kicker.toUpperCase(), kSize, y + kCapH, accent, { tracking: kTrack }));
+    y += kCapH + gapKicker;
+  }
+
+  for (const line of hLines) {
+    els.push(emit(HF, line, hSize, y + hCapH, "#ffffff", { shadow: headlineShadow }));
+    y += hLead;
+  }
+
+  if (showBar) {
+    y += gapBar;
+    const bx = align === "left" ? leftX : cx - barW / 2;
+    els.push(`<rect x="${bx}" y="${y}" width="${barW}" height="${barH}" rx="${barH / 2}" fill="${accent}"/>`);
+    y += barH;
+  }
+
+  if (bodyLines.length) {
+    y += gapBody;
+    for (const line of bodyLines) {
+      els.push(emit(SB, line, bodyMax, y + capHeight(SB, bodyMax), "#ffffff", {
+        opacity: 0.92,
+        shadow: Math.round(1.5 * scale),
+      }));
+      y += bodyLead;
     }
   }
-  if (current) lines.push(current);
-  return lines.length ? lines : [text];
+
+  if (handle) {
+    els.push(emit(SB, handle, handleSize, H - Math.round(H * 0.045), "#ffffff", {
+      opacity: 0.75,
+      tracking: 1 * scale,
+    }));
+  }
+
+  return `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>${defs.join("")}</defs>
+    ${backing}
+    ${els.join("\n")}
+  </svg>`;
 }
 
-function gradientBandSvg(
-  position: "top" | "center" | "bottom",
-  bandH: number
-): string {
-  const W = OUTPUT_SIZE;
-
-  if (position === "top") {
-    return `<linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#000" stop-opacity="0.72"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-    </linearGradient>
-    <rect x="0" y="0" width="${W}" height="${bandH}" fill="url(#grad)"/>`;
-  }
-  if (position === "center") {
-    const y = (OUTPUT_SIZE - bandH) / 2;
-    return `<linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+/** Last-resort overlay if the bundled fonts can't be loaded — keeps generation alive. */
+function fallbackOverlay(input: RenderInput): string {
+  const { W, H, headline, accent } = input;
+  const fs = Math.round(W * 0.07);
+  return `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#000" stop-opacity="0"/>
-      <stop offset="40%" stop-color="#000" stop-opacity="0.75"/>
-      <stop offset="60%" stop-color="#000" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-    </linearGradient>
-    <rect x="0" y="${y}" width="${W}" height="${bandH}" fill="url(#grad)"/>`;
-  }
-  // bottom (default)
-  const y = OUTPUT_SIZE - bandH;
-  return `<linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#000" stop-opacity="0"/>
-    <stop offset="100%" stop-color="#000" stop-opacity="0.78"/>
-  </linearGradient>
-  <rect x="0" y="${y}" width="${W}" height="${bandH}" fill="url(#grad)"/>`;
+      <stop offset="100%" stop-color="#000" stop-opacity="0.85"/></linearGradient></defs>
+    <rect x="0" y="${H - Math.round(H * 0.4)}" width="${W}" height="${Math.round(H * 0.4)}" fill="url(#g)"/>
+    <text x="${W / 2}" y="${H - Math.round(H * 0.12)}" text-anchor="middle" font-family="Arial, sans-serif"
+      font-size="${fs}" font-weight="bold" fill="#fff">${escapeXml(headline)}</text>
+    <rect x="${W / 2 - 36}" y="${H - Math.round(H * 0.09)}" width="72" height="7" rx="3" fill="${accent}"/>
+  </svg>`;
 }
 
 export async function composeSlide(
   rawBuffer: Buffer,
   slide: SlideData,
-  slideNumber: number,
-  totalSlides: number
+  opts: ComposeOptions
 ): Promise<Buffer> {
-  const { headline, body, text_position: pos, text_size: sz } = slide;
-  const sizes = SIZE_MAP[sz] ?? SIZE_MAP.medium;
-  const W = OUTPUT_SIZE;
-  const padX = Math.round(W * 0.06);
-  const maxW = W - padX * 2;
+  const W = opts.width;
+  const H = opts.height;
+  const input: RenderInput = {
+    W,
+    H,
+    headline: slide.headline ?? "",
+    body: slide.body ?? "",
+    kicker: (slide.kicker ?? "").trim(),
+    position: slide.text_position ?? "bottom",
+    textSize: slide.text_size ?? "medium",
+    template: resolveTemplate(opts.template),
+    accent: resolveAccent(opts.accentColor),
+    handle: opts.handle ?? "",
+    textAmount: resolveTextAmount(opts.textAmount),
+    fontTheme: resolveFontTheme(opts.fontTheme),
+    headlineCase: resolveHeadlineCase(opts.headlineCase),
+    textAlign: resolveTextAlign(opts.textAlign),
+  };
 
-  // Word-wrap
-  const hLines = wrapText(headline, sizes.headline, maxW);
-  const bLines = body ? wrapText(body, sizes.body, maxW) : [];
+  const overlaySvg = fontsAvailable() ? renderOverlay(input) : fallbackOverlay(input);
 
-  const hLineH = Math.round(sizes.headline * 1.28);
-  const bLineH = Math.round(sizes.body * 1.38);
-  const gap = body ? 14 : 0;
-
-  const textBlockH = hLines.length * hLineH + gap + bLines.length * bLineH;
-  const bandH = Math.max(textBlockH + 80, Math.round(W * 0.27));
-
-  // Y anchor for text block
-  let textY: number;
-  if (pos === "top") {
-    textY = 36;
-  } else if (pos === "center") {
-    textY = Math.round((W - textBlockH) / 2);
-  } else {
-    textY = W - bandH + Math.round((bandH - textBlockH) / 2);
-  }
-
-  // Build SVG overlay
-  const textNodes: string[] = [];
-  let y = textY;
-
-  for (const line of hLines) {
-    const x = W / 2;
-    // shadow
-    textNodes.push(
-      `<text x="${x + 3}" y="${y + sizes.headline + 3}" text-anchor="middle"
-        font-family="${FONT_STACK}" font-size="${sizes.headline}" font-weight="bold"
-        fill="black" opacity="0.65">${escapeXml(line)}</text>`
-    );
-    // main
-    textNodes.push(
-      `<text x="${x}" y="${y + sizes.headline}" text-anchor="middle"
-        font-family="${FONT_STACK}" font-size="${sizes.headline}" font-weight="bold"
-        fill="white">${escapeXml(line)}</text>`
-    );
-    y += hLineH;
-  }
-
-  y += gap;
-
-  for (const line of bLines) {
-    const x = W / 2;
-    textNodes.push(
-      `<text x="${x + 2}" y="${y + sizes.body + 2}" text-anchor="middle"
-        font-family="${FONT_STACK}" font-size="${sizes.body}"
-        fill="black" opacity="0.55">${escapeXml(line)}</text>`
-    );
-    textNodes.push(
-      `<text x="${x}" y="${y + sizes.body}" text-anchor="middle"
-        font-family="${FONT_STACK}" font-size="${sizes.body}"
-        fill="rgba(255,255,255,0.90)">${escapeXml(line)}</text>`
-    );
-    y += bLineH;
-  }
-
-  // Slide counter badge
-  let counterSvg = "";
-  if (totalSlides > 1) {
-    const label = `${slideNumber}/${totalSlides}`;
-    const cx = W - 52;
-    const cy = 38;
-    counterSvg = `
-      <rect x="${cx - 24}" y="${cy - 16}" width="52" height="26" rx="13"
-        fill="black" opacity="0.45"/>
-      <text x="${cx + 2}" y="${cy + 6}" text-anchor="middle"
-        font-family="${FONT_STACK}" font-size="18" font-weight="600"
-        fill="rgba(255,255,255,0.9)">${escapeXml(label)}</text>`;
-  }
-
-  const overlay = Buffer.from(`
-    <svg width="${W}" height="${W}" xmlns="http://www.w3.org/2000/svg">
-      <defs>${gradientBandSvg(pos, bandH)}</defs>
-      ${textNodes.join("\n")}
-      ${counterSvg}
-    </svg>`);
-
-  // Resize base, composite overlay, output JPEG
-  return sharp(rawBuffer)
-    .resize(OUTPUT_SIZE, OUTPUT_SIZE, { fit: "cover" })
-    .composite([{ input: overlay, blend: "over" }])
-    .jpeg({ quality: 92, progressive: true })
+  const result = await sharp(rawBuffer)
+    .resize(W, H, { fit: "cover", position: "centre" })
+    .composite([{ input: Buffer.from(overlaySvg), blend: "over" }])
+    .jpeg({ quality: 93, progressive: true, mozjpeg: true })
     .toBuffer();
+
+  if (result.byteLength < 30_000) {
+    console.warn(
+      `[compositor] Slide output is suspiciously small: ${result.byteLength} bytes at ${W}×${H}px. The source image may have been a placeholder.`
+    );
+  }
+
+  return result;
 }
 
 function escapeXml(s: string): string {
