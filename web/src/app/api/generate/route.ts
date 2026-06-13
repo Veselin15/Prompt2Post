@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
-import { planStructure, writeContent } from "@/lib/ai/groq";
+import { planStructure, developBrief, writeContent } from "@/lib/ai/groq";
 import { fetchImageBuffer, genDimensions } from "@/lib/image/pollinations";
 import { composeSlide } from "@/lib/image/compositor";
 import { uploadSlideImage, uploadSlideBackground, uploadZip, deletePostFiles } from "@/lib/image/storage";
@@ -129,8 +129,21 @@ export async function POST(req: NextRequest) {
       structure.text_align = resolveTextAlign(textAlign);
       await send({ type: "structure", structure, progress: 16 });
 
-      // ── 3. Write creative content ─────────────────────────────────────────
-      await send({ type: "status", message: "AI is writing creative content…", progress: 18 });
+      // ── 3a. Creative brief ───────────────────────────────────────────────
+      // Research + art-direction pass: specific facts, a real arc, and ONE
+      // cohesive visual world. Grounds the writer for sharper copy + better,
+      // more consistent imagery. Resilient — returns null if it can't run.
+      await send({ type: "status", message: "AI is researching the sharpest angle…", progress: 18 });
+      const brief = await developBrief(topic, {
+        tone: structure.tone,
+        style: structure.style,
+        numSlides: structure.num_slides,
+        colorMood: structure.color_mood,
+        language: resolveLanguage(language),
+      });
+
+      // ── 3b. Write creative content ────────────────────────────────────────
+      await send({ type: "status", message: "AI is writing creative content…", progress: 24 });
       const content = await writeContent(
         topic,
         structure.tone,
@@ -139,7 +152,8 @@ export async function POST(req: NextRequest) {
         structure.num_slides,
         structure.color_mood,
         structure.text_amount,
-        resolveLanguage(language)
+        resolveLanguage(language),
+        brief
       );
       const { slides: rawSlides, ...contentMeta } = content;
       await send({ type: "content", content: contentMeta, progress: 32 });

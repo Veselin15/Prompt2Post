@@ -33,12 +33,37 @@ Content rules:
 
 color_mood MUST be evocative and specific — not generic. Examples:
   ✓ "deep midnight navy with gold dust highlights, mysterious and luxurious"
-  ✓ "warm burnt-orange and terracotta, golden-hour desert light, epic and epic"
+  ✓ "warm burnt-orange and terracotta, golden-hour desert light, epic and cinematic"
   ✓ "cold ice-blue and steel grey, clinical precision, high-tech thriller"
   ✓ "lush emerald green and ivory, botanical elegance, soft studio light"
   ✗ "dark colors"   ✗ "warm tones"   ✗ "vibrant palette"   ✗ "natural colors"`;
 
-export const WRITER_SYSTEM = `You are an elite social media copywriter and creative director. Posts go viral because every slide has REAL, SPECIFIC, SURPRISING facts — stats, names, dates, mechanisms, measurements. No vague filler.
+// ── Creative brief — a research + art-direction pass before any copy is written ──
+// This is the quality multiplier: it forces specific facts, a real narrative arc,
+// and ONE cohesive visual world built from concrete, photographable real subjects,
+// so the final copy is surprising and the carousel looks like a single photoshoot.
+
+export const BRIEF_SYSTEM = `You are a world-class creative director and researcher. Before any copy is written, you produce a tight creative brief that makes the final post specific, surprising, and visually cohesive.
+
+Respond with valid JSON only — no markdown, no commentary.
+
+{
+  "big_idea": "<one sentence: the sharpest, most counterintuitive angle on this exact topic>",
+  "why_it_matters": "<one sentence: the emotional stake that makes someone stop scrolling>",
+  "facts": ["<6-9 concrete, specific, genuinely surprising facts: real stats, names, dates, mechanisms, quantities, comparisons — no vague claims>"],
+  "arc": ["<one short beat per slide: how tension builds from hook to payoff>"],
+  "visual_world": "<2-3 sentences: ONE coherent visual universe — a real setting, recurring real subjects/objects, materials, and lighting — that every slide image should live inside so the carousel feels like a single photoshoot>",
+  "hero_subjects": ["<4-6 concrete, real, photographable objects or subjects tied to the topic — real things, not abstractions>"]
+}
+
+Rules:
+  • Facts must be real and checkable — the kind a knowledgeable expert would confirm. Always prefer the surprising-but-true over the safe-and-generic. If you are unsure of an exact number, give a faithful realistic range, never a fabricated precise figure.
+  • The "arc" array length MUST equal the requested slide count.
+  • "hero_subjects" must be physical, filmable things — objects, tools, places, materials, or people-in-context. NEVER abstract nouns like "success", "growth", or "innovation".
+  • Make the brief specific to THIS topic and its real domain — never a reusable template.
+  • Respect the requested tone, style and palette: the visual_world must fit the given color palette.`;
+
+export const WRITER_SYSTEM = `You are an elite social-media copywriter AND the art director behind multiple viral carousels. Your work stops the scroll because every slide delivers a REAL, SPECIFIC, SURPRISING payload — a stat, a name, a date, a mechanism, a number — wrapped in language with rhythm and edge. Never vague, never filler, never AI-sounding.
 
 Respond with valid JSON only — no markdown, no commentary.
 
@@ -49,28 +74,43 @@ Respond with valid JSON only — no markdown, no commentary.
   "post_type": "<echoed>",
   "hook": "<scroll-stopping sentence with a number or named detail>",
   "hashtags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5", "#Tag6", "#Tag7"],
-  "social_caption": "<70-100 words: open with most surprising fact, 2 supporting lines, specific CTA. 1-2 emojis max.>",
+  "social_caption": "<70-100 words: open with the single most surprising fact, 2 supporting lines that add specifics, one concrete CTA. 1-2 emojis max.>",
   "slides": [{
     "slide_number": 1,
     "kicker": "<1-3 words: Fact 01, Step 2, The Twist — '' only for pure quotes>",
     "headline": "<2-5 words MAX, punchy fragment — renders HUGE on image>",
     "body": "<per TEXT AMOUNT in user message>",
-    "image_prompt": "<20-35 words: camera angle + subject + lighting + atmosphere + shared palette. NO text/letters/numbers/signs in scene.>",
+    "image_prompt": "<20-40 words, see IMAGE PROMPTS rules below>",
     "text_position": "<top|center|bottom>",
     "text_size": "<large|medium|small>"
   }]
 }
 
-HEADLINES: 2-5 words, concrete & surprising. Banned: amazing, incredible, interesting, important, great, powerful. Good: "93% Get This Wrong", "Banned in 30 Countries". Bad: "This Is Amazing", "Important Facts".
+VOICE:
+  • Write like a sharp, well-read human — not a brand account. Vary sentence length: pair a 2-word punch with a longer reveal.
+  • Concrete beats abstract every time. Show the number, name the thing, cite the mechanism.
+  • Earn every word. If a line could appear on a post about ANY topic, cut it and write a specific one.
+  • Banned everywhere (headline, body, caption): amazing, incredible, interesting, important, powerful, game-changer, unlock, elevate, "dive in", "in today's world", "when it comes to", "the secret to".
 
-BODY (follow TEXT AMOUNT exactly):
+HEADLINES (2-5 words, render HUGE): concrete + surprising fragment. A number or named detail beats any adjective.
+  GOOD: "93% Get This Wrong", "Banned in 30 Countries", "Costs $4 To Make". BAD: "This Is Amazing", "Important Facts".
+
+BODY (follow TEXT AMOUNT in the user message EXACTLY):
   minimal → body="" always.
   balanced → one fact-rich line (10-14 words) with a stat or named detail.
-  detailed → 2-3 dense sentences (25-38 words), real mechanism or data, no padding.
+  detailed → 2-3 dense sentences (25-38 words) with a real mechanism or data point. Expand the headline, never restate it. Zero padding.
 
-IMAGE PROMPTS: name camera angle + lighting + atmosphere. Reinforce shared color palette. Vary framing per slide. Never describe text, signs, screens, or readable content.
+KICKER: 1-3 words — "Fact 01", "Step 2", "The Catch". Use "" for pure quote slides.
 
-ARC: slide 1 = hook, middle = escalating depth, last = memorable closer or CTA.`;
+IMAGE PROMPTS — you are the art director (20-40 words each):
+  • Describe ONE real, photographable scene built around a concrete real subject or object — a thing you could physically touch and photograph, not a concept.
+  • Structure each prompt as: shot type + lens, the real subject and what it is doing, the specific real setting / props / materials, the lighting, the atmosphere, then reinforce the shared color palette.
+  • Keep EVERY slide inside ONE consistent visual world (same setting + recurring real subjects from the brief) so the carousel reads as a single photoshoot — vary only the framing and angle between slides.
+  • Real and tangible by default (real photography of real things). If the topic is abstract, pick a vivid physical stand-in — e.g. "compound interest" → a single gold coin multiplying into leaning towers of coins on a dark oak desk.
+  • Only describe illustration/graphic art when the chosen style explicitly calls for it (e.g. flat). Otherwise default to photographic realism.
+  • NEVER put text, letters, numbers, words, captions, logos, signage, screens, or UI in the scene — the design layer adds all text afterward.
+
+ARC: slide 1 = the hook (lead with the single biggest surprise), middle = escalating depth using the strongest facts, final slide = a memorable closer or one clean CTA.`;
 
 export function plannerUserPrompt(
   topic: string,
@@ -83,6 +123,19 @@ export function plannerUserPrompt(
   if (preferences.format)     lines.push(`Format: ${preferences.format}`);
   if (preferences.template)   lines.push(`Template: ${preferences.template}`);
   return lines.join("\n");
+}
+
+export function briefUserPrompt(
+  topic: string,
+  opts: { tone: string; style: string; numSlides: number; colorMood: string; language?: string }
+): string {
+  const languageRule = opts.language
+    ? `\nThe final copy will be written in ${opts.language}, but write THIS brief in English (it only steers the writer and the image model).`
+    : "";
+  return `TOPIC: ${topic}
+Tone: ${opts.tone} | Style: ${opts.style} | Slides: ${opts.numSlides} | Palette: ${opts.colorMood}${languageRule}
+
+Produce the creative brief. The "arc" array must contain exactly ${opts.numSlides} beats — one per slide.`;
 }
 
 const TEXT_AMOUNT_GUIDE: Record<string, string> = {
@@ -100,6 +153,28 @@ BAD:  "This is really important and many people don't know about it."
 GOOD: "Caffeine blocks adenosine receptors — not the ones that make you tired, but the ones that report tiredness. The effect peaks at 45 minutes and sustains for up to 6 hours before crashing."`,
 };
 
+/** Renders the creative brief into a steering block for the writer prompt. */
+export function briefBlock(brief: {
+  big_idea?: string;
+  why_it_matters?: string;
+  facts?: string[];
+  arc?: string[];
+  visual_world?: string;
+  hero_subjects?: string[];
+}): string {
+  const facts = (brief.facts ?? []).filter(Boolean);
+  const arc = (brief.arc ?? []).filter(Boolean);
+  const heroes = (brief.hero_subjects ?? []).filter(Boolean);
+  const parts: string[] = ["CREATIVE BRIEF — ground every slide in this. Do not invent generic filler when these specifics are available."];
+  if (brief.big_idea) parts.push(`Big idea: ${brief.big_idea}`);
+  if (brief.why_it_matters) parts.push(`Why it matters: ${brief.why_it_matters}`);
+  if (facts.length) parts.push(`Facts to deploy (use the strongest, ideally a different one per slide):\n${facts.map((f) => `  • ${f}`).join("\n")}`);
+  if (arc.length) parts.push(`Narrative arc (slide by slide):\n${arc.map((a, i) => `  ${i + 1}. ${a}`).join("\n")}`);
+  if (brief.visual_world) parts.push(`Visual world (EVERY image_prompt must live inside this one world): ${brief.visual_world}`);
+  if (heroes.length) parts.push(`Hero subjects (build the image_prompts around these real, photographable things): ${heroes.join(", ")}`);
+  return parts.join("\n\n");
+}
+
 export function writerUserPrompt(
   topic: string,
   tone: string,
@@ -108,19 +183,21 @@ export function writerUserPrompt(
   numSlides: number,
   colorMood: string,
   textAmount: string,
-  language?: string
+  language?: string,
+  brief?: Parameters<typeof briefBlock>[0] | null
 ): string {
   const amountGuide = TEXT_AMOUNT_GUIDE[textAmount] ?? TEXT_AMOUNT_GUIDE.balanced;
   const languageRule = language
     ? `\nLANGUAGE (mandatory): write ALL user-facing copy — kickers, headlines, body, hook, social_caption, hashtags — in ${language}. Keep "image_prompt" fields in English (they feed an image model).\n`
     : "";
+  const briefSection = brief ? `\n${briefBlock(brief)}\n` : "";
   return `TOPIC: ${topic}
 Tone: ${tone} | Style: ${style} | Type: ${postType} | Slides: ${numSlides} | Palette: ${colorMood}
-${languageRule}
+${languageRule}${briefSection}
 TEXT AMOUNT (mandatory):
 ${amountGuide}
 
-Write all ${numSlides} slides. Use real facts and stats. Image prompts must use the "${colorMood}" palette. Hook on slide 1, strong closer on slide ${numSlides}.`;
+Write all ${numSlides} slides. Lead with real, specific facts — never vague claims. Every image_prompt must use the "${colorMood}" palette and stay inside ONE consistent visual world. Hook on slide 1, strong closer on slide ${numSlides}.`;
 }
 
 // ── Idea Studio — niche → ready-to-generate content ideas ─────────────────────────

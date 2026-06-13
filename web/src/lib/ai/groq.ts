@@ -12,17 +12,30 @@ import {
 import {
   PLANNER_SYSTEM,
   WRITER_SYSTEM,
+  BRIEF_SYSTEM,
   IDEAS_SYSTEM,
   REMIX_SYSTEM,
   REWRITE_SYSTEM,
   REPURPOSE_SYSTEM,
   plannerUserPrompt,
   writerUserPrompt,
+  briefUserPrompt,
   ideasUserPrompt,
   remixUserPrompt,
   rewriteUserPrompt,
   repurposeUserPrompt,
 } from "./prompts";
+
+/** Always-available, proven model — also the fallback if a fancier model errors. */
+const SAFE_MODEL = "llama-3.3-70b-versatile";
+/** Planner/structure model (cheap, fast). */
+const plannerModel = () => process.env.GROQ_MODEL ?? SAFE_MODEL;
+/**
+ * Writer/brief model — the quality-critical calls. Defaults to the proven model
+ * but can be upgraded with one env line (e.g. GROQ_WRITER_MODEL=moonshotai/kimi-k2-instruct)
+ * for noticeably richer copy. If that model is unavailable, calls auto-fall back.
+ */
+const writerModel = () => process.env.GROQ_WRITER_MODEL ?? process.env.GROQ_MODEL ?? SAFE_MODEL;
 
 let _client: Groq | null = null;
 function getClient(): Groq {
@@ -32,6 +45,39 @@ function getClient(): Groq {
     _client = new Groq({ apiKey: key });
   }
   return _client;
+}
+
+/** True when an error means the requested model can't be served (so we can retry on SAFE_MODEL). */
+function isModelError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    msg.includes("model_not_found") ||
+    msg.includes("does not exist") ||
+    msg.includes("decommission") ||
+    msg.includes("not found") ||
+    (msg.includes("model") && (msg.includes("invalid") || msg.includes("unavailable")))
+  );
+}
+
+type CreateParams = Parameters<Groq["chat"]["completions"]["create"]>[0];
+
+/**
+ * Single choke-point for chat completions. Transparently retries on SAFE_MODEL if
+ * the requested model is unavailable, so opting into a stronger model can never
+ * brick generation.
+ */
+async function createCompletion(params: CreateParams): Promise<string> {
+  const groq = getClient();
+  try {
+    const res = await groq.chat.completions.create(params);
+    return (res as { choices: { message: { content: string | null } }[] }).choices[0].message.content ?? "{}";
+  } catch (err) {
+    if (isModelError(err) && params.model !== SAFE_MODEL) {
+      const res = await groq.chat.completions.create({ ...params, model: SAFE_MODEL });
+      return (res as { choices: { message: { content: string | null } }[] }).choices[0].message.content ?? "{}";
+    }
+    throw err;
+  }
 }
 
 function extractJson(text: string): unknown {
@@ -93,24 +139,23 @@ export async function planStructure(
   preferences: { tone?: string; style?: string; numSlides?: number; format?: string; template?: string },
   retries = 3
 ): Promise<PostStructure> {
-  const groq = getClient();
   let lastError: Error | null = null;
 
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await groq.chat.completions.create({
-        model: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
+      const content = await createCompletion({
+        model: plannerModel(),
         messages: [
           { role: "system", content: PLANNER_SYSTEM },
           { role: "user", content: plannerUserPrompt(topic, preferences) },
         ],
         response_format: { type: "json_object" },
-        temperature: 0.5,
+        temperature: 0.6,
         top_p: 0.9,
         max_tokens: 512,
       });
 
-      const raw = extractJson(res.choices[0].message.content ?? "{}") as Record<string, unknown>;
+      const raw = extractJson(content) as Record<string, unknown>;
       const structure = validateStructure(raw);
 
       if (preferences.tone) structure.tone = preferences.tone;
@@ -128,13 +173,78 @@ export async function planStructure(
 
 /** Groq on-demand TPM ≈ 12k — request size ≈ input tokens + max_tokens. */
 function writerMaxTokens(numSlides: number, textAmount: string): number {
-  const perSlide = textAmount === "detailed" ? 400 : textAmount === "balanced" ? 280 : 180;
-  return Math.min(3500, 500 + numSlides * perSlide);
+  // Richer prompts + the creative brief earn a bigger budget per slide.
+  const perSlide = textAmount === "detailed" ? 460 : textAmount === "balanced" ? 330 : 220;
+  return Math.min(4000, 700 + numSlides * perSlide);
 }
 
 function isRateLimitError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return msg.includes("rate_limit") || msg.includes("429") || msg.includes("413");
+}
+
+// ── Creative brief — research + art-direction pass that grounds the writer ──────────
+
+export interface CreativeBrief {
+  big_idea: string;
+  why_it_matters: string;
+  facts: string[];
+  arc: string[];
+  visual_world: string;
+  hero_subjects: string[];
+}
+
+function validateBrief(data: Record<string, unknown>): CreativeBrief | null {
+  const toStrArray = (v: unknown): string[] =>
+    Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean).slice(0, 12) : [];
+  const facts = toStrArray(data.facts);
+  const heroes = toStrArray(data.hero_subjects);
+  // A brief with no usable substance isn't worth threading through.
+  if (facts.length === 0 && !data.visual_world && heroes.length === 0) return null;
+  return {
+    big_idea: String(data.big_idea ?? "").trim().slice(0, 400),
+    why_it_matters: String(data.why_it_matters ?? "").trim().slice(0, 400),
+    facts,
+    arc: toStrArray(data.arc),
+    visual_world: String(data.visual_world ?? "").trim().slice(0, 800),
+    hero_subjects: heroes,
+  };
+}
+
+/**
+ * Pre-writing creative brief: specific facts, a real arc, and ONE cohesive visual
+ * world built from concrete real subjects. Never throws — on any failure it returns
+ * null and the writer proceeds unguided (so a brief hiccup can't block generation).
+ */
+export async function developBrief(
+  topic: string,
+  opts: { tone: string; style: string; numSlides: number; colorMood: string; language?: string },
+  retries = 2
+): Promise<CreativeBrief | null> {
+  let lastError: Error | null = null;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      if (i > 0 && lastError && isRateLimitError(lastError)) {
+        await new Promise((r) => setTimeout(r, 3000 * i));
+      }
+      const content = await createCompletion({
+        model: writerModel(),
+        messages: [
+          { role: "system", content: BRIEF_SYSTEM },
+          { role: "user", content: briefUserPrompt(topic, opts) },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        top_p: 0.9,
+        max_tokens: Math.min(1600, 700 + opts.numSlides * 90),
+      });
+      return validateBrief(extractJson(content) as Record<string, unknown>);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
+  }
+  console.warn(`Creative brief unavailable (${lastError?.message}); writing without it.`);
+  return null;
 }
 
 export async function writeContent(
@@ -146,9 +256,9 @@ export async function writeContent(
   colorMood: string,
   textAmount: string,
   language = "",
+  brief: CreativeBrief | null = null,
   retries = 3
 ): Promise<CreativeContent> {
-  const groq = getClient();
   let lastError: Error | null = null;
 
   for (let i = 0; i < retries; i++) {
@@ -157,20 +267,22 @@ export async function writeContent(
         await new Promise((r) => setTimeout(r, 4000 * i));
       }
 
-      const res = await groq.chat.completions.create({
-        model: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
+      const content = await createCompletion({
+        model: writerModel(),
         messages: [
           { role: "system", content: WRITER_SYSTEM },
-          { role: "user", content: writerUserPrompt(topic, tone, style, postType, numSlides, colorMood, textAmount, language) },
+          { role: "user", content: writerUserPrompt(topic, tone, style, postType, numSlides, colorMood, textAmount, language, brief) },
         ],
         response_format: { type: "json_object" },
-        temperature: 0.8,
-        top_p: 0.95,
-        frequency_penalty: 0.2,
+        // Hotter + dual penalties → more varied, less templated phrasing.
+        temperature: 0.88,
+        top_p: 0.92,
+        frequency_penalty: 0.35,
+        presence_penalty: 0.3,
         max_tokens: writerMaxTokens(numSlides, textAmount),
       });
 
-      const raw = extractJson(res.choices[0].message.content ?? "{}") as Record<string, unknown>;
+      const raw = extractJson(content) as Record<string, unknown>;
       return validateContent(raw);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
@@ -187,7 +299,6 @@ async function jsonChat(
   opts: { maxTokens: number; temperature?: number },
   retries = 2
 ): Promise<Record<string, unknown>> {
-  const groq = getClient();
   let lastError: Error | null = null;
 
   for (let i = 0; i <= retries; i++) {
@@ -195,8 +306,8 @@ async function jsonChat(
       if (i > 0 && lastError && isRateLimitError(lastError)) {
         await new Promise((r) => setTimeout(r, 3000 * i));
       }
-      const res = await groq.chat.completions.create({
-        model: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
+      const content = await createCompletion({
+        model: writerModel(),
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
@@ -206,7 +317,7 @@ async function jsonChat(
         top_p: 0.95,
         max_tokens: opts.maxTokens,
       });
-      return extractJson(res.choices[0].message.content ?? "{}") as Record<string, unknown>;
+      return extractJson(content) as Record<string, unknown>;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
     }

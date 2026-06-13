@@ -1,16 +1,28 @@
 const BASE = "https://gen.pollinations.ai/image";
 
+// Per-style art direction. Photographic styles read as real photography of real
+// subjects; only `flat` is illustration. Phrased as standalone clauses so they
+// compose cleanly with the universal quality + anti-text tails below.
 const STYLE_SUFFIX: Record<string, string> = {
-  cinematic:   ", cinematic anamorphic lens photography, dramatic chiaroscuro lighting, shallow depth of field, rich Kodak film grain, professional color grade, ultra-detailed, highly photorealistic, 8k resolution, masterpiece composition",
-  vibrant:     ", ultra-vibrant commercial photography, HDR color grading, punchy saturated palette, perfect dynamic range, razor-sharp details, professional retouching, photorealistic, studio quality, 8k",
-  minimalist:  ", minimalist fine-art photography, expansive negative space, soft diffused natural light, clean geometric composition, muted restrained palette, architectural precision, museum-quality print, highly detailed",
-  neon:        ", neon-lit cyberpunk scene, wet reflective surfaces, volumetric light beams, deep dramatic shadows, chromatic aberration, long-exposure night photography, ultra-detailed, 8k, photorealistic",
-  vintage:     ", analog film photography, warm Kodachrome grain, muted nostalgic color palette, deliberate light leak, vignette edges, 1970s retro aesthetic, faded warmth, museum-quality scan, timeless",
-  dreamy:      ", dreamy soft-focus photography, golden-hour bokeh balls, ethereal lens flare, warm pastel palette, romantic hazy atmosphere, fairy-tale luminosity, highly detailed, professional photography",
-  flat:        ", editorial flat design illustration, bold vector graphic, Swiss international grid, geometric shapes, crisp clean lines, Bauhaus influence, limited but deliberate color palette, print-ready quality",
-  bold:        ", bold dramatic photography, extreme high contrast, powerful graphic composition, strong geometric forms, striking monumental scale, heroic camera angle, ultra-detailed, photorealistic, 8k",
+  cinematic:   "Cinematic anamorphic photography, dramatic chiaroscuro lighting, shallow depth of field, rich filmic color grade, subtle Kodak film grain, photorealistic",
+  vibrant:     "Ultra-vibrant commercial photography, punchy saturated palette, HDR color grade, razor-sharp product-shot detail, perfect dynamic range, studio quality, photorealistic",
+  minimalist:  "Minimalist fine-art photography, expansive negative space, soft diffused natural light, clean geometric composition, muted restrained palette, architectural precision, photorealistic",
+  neon:        "Neon-lit cyberpunk photography, wet reflective surfaces, volumetric light beams, deep dramatic shadows, long-exposure night look, subtle chromatic aberration, photorealistic",
+  vintage:     "Analog film photography, warm Kodachrome grain, muted nostalgic palette, gentle light leak, soft vignette, 1970s aesthetic, photorealistic",
+  dreamy:      "Dreamy soft-focus photography, golden-hour bokeh, ethereal lens flare, warm pastel palette, romantic hazy atmosphere, photorealistic",
+  flat:        "Editorial flat-design illustration, bold vector shapes, Swiss international grid, crisp clean lines, Bauhaus influence, limited deliberate palette, print-ready",
+  bold:        "Bold dramatic photography, extreme high contrast, strong graphic composition, monumental scale, heroic camera angle, photorealistic",
 };
 
+// Universal tails. Photographic styles get a real-camera quality clause; the lone
+// illustration style gets an illustration-quality clause instead.
+const PHOTO_QUALITY =
+  "shot on a professional full-frame camera, true-to-life proportions, physically accurate materials and textures, tack-sharp focus on the subject, natural depth of field, high dynamic range, masterful composition, ultra-detailed, 8k";
+const ILLUSTRATION_QUALITY =
+  "clean professional illustration, perfectly balanced composition, crisp vector edges, deliberate negative space, ultra-detailed, high resolution";
+// Embedded negative cues — Flux honors these in-prompt; the design layer adds text later.
+const ANTI_TEXT =
+  "no text, no letters, no numbers, no words, no captions, no typography, no logos, no watermark, no signage, no UI, no borders, no frame";
 
 export interface ImageOptions {
   /** Visual style keyword (cinematic, neon, …) → appended style cues. */
@@ -26,9 +38,9 @@ export interface ImageOptions {
 export function genDimensions(
   targetW: number,
   targetH: number,
-  cap = 1536
+  cap = 1920
 ): { width: number; height: number } {
-  // Native Instagram sizes (1080-wide) — generate at full resolution, no downscale
+  // Native Instagram sizes (incl. 1080×1920 stories) — generate at full resolution.
   if (targetW <= cap && targetH <= cap) {
     return { width: targetW, height: targetH };
   }
@@ -37,22 +49,32 @@ export function genDimensions(
   return { width: round8(targetW), height: round8(targetH) };
 }
 
+/** Compose the full image-model prompt: subject → style → palette → quality → negatives. */
+export function composePrompt(prompt: string, opts: ImageOptions): string {
+  const isFlat = opts.style === "flat";
+  const style = STYLE_SUFFIX[opts.style] ?? STYLE_SUFFIX.cinematic;
+  const quality = isFlat ? ILLUSTRATION_QUALITY : PHOTO_QUALITY;
+  const palette = opts.colorMood ? ` Color grade: ${opts.colorMood}.` : "";
+  return `${prompt.trim().replace(/\.+$/, "")}. ${style}. ${quality}.${palette} ${ANTI_TEXT}`;
+}
+
 export function buildImageUrl(
   prompt: string,
   opts: ImageOptions,
   seed: number
 ): string {
-  const suffix = STYLE_SUFFIX[opts.style] ?? "";
-  const palette = opts.colorMood ? `, ${opts.colorMood} color palette` : "";
-  const full = `${prompt}${suffix}${palette}`;
+  const full = composePrompt(prompt, opts);
   const encoded = encodeURIComponent(full);
   const key = process.env.POLLINATIONS_API_KEY ?? "";
   const keyParam = key ? `&key=${encodeURIComponent(key)}` : "";
-  const width = opts.width ?? 768;
-  const height = opts.height ?? 768;
-  // enhance=true  → Pollinations rewrites the prompt through an LLM for better Flux results
-  // private=true  → image won't appear in the public Pollinations gallery
-  return `${BASE}/${encoded}?model=flux&width=${width}&height=${height}&nologo=true&enhance=true&private=true&seed=${seed}${keyParam}`;
+  const width = opts.width ?? 1080;
+  const height = opts.height ?? 1080;
+  const model = process.env.POLLINATIONS_MODEL ?? "flux";
+  // enhance → Pollinations rewrites the prompt through an LLM for richer Flux output.
+  // Defaults on; set POLLINATIONS_ENHANCE=false to send our exact prompt verbatim.
+  const enhance = process.env.POLLINATIONS_ENHANCE === "false" ? "false" : "true";
+  // private=true → image won't appear in the public Pollinations gallery.
+  return `${BASE}/${encoded}?model=${encodeURIComponent(model)}&width=${width}&height=${height}&nologo=true&enhance=${enhance}&private=true&seed=${seed}${keyParam}`;
 }
 
 export async function fetchImageBuffer(
