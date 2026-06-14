@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createPortalSession, isStripeConfigured } from "@/lib/stripe";
 import { getUserById } from "@/lib/db";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -16,10 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No billing account found" }, { status: 400 });
   }
 
-  const origin = req.nextUrl.origin;
+  const base = getAppBaseUrl(req);
   const url = await createPortalSession({
     customerId: dbUser.stripe_customer_id,
-    returnUrl: `${origin}/dashboard/billing`,
+    returnUrl: `${base}/dashboard/billing`,
   });
 
   return NextResponse.json({ url });

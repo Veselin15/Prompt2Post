@@ -39,6 +39,8 @@ services:
     environment:
       # Override the host: inside the compose network Postgres is "postgres".
       DATABASE_URL: postgresql://prompt2post:${POSTGRES_PASSWORD:-prompt2post}@postgres:5432/prompt2post
+      # Runtime public URL for Stripe/OAuth redirects (not baked at image build time).
+      APP_BASE_URL: ${APP_BASE_URL:-${NEXT_PUBLIC_APP_URL:-${NEXT_PUBLIC_URL}}}
       # Run the publishing scheduler in-process (no external cron on a homeserver).
       ENABLE_INTERNAL_CRON: "true"
     ports:

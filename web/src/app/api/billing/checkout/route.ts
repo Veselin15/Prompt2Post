@@ -7,6 +7,7 @@ import {
   PRICE_IDS,
 } from "@/lib/stripe";
 import { getUserById, updateUserStripeId } from "@/lib/db";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -46,13 +47,13 @@ export async function POST(req: NextRequest) {
     await updateUserStripeId(userId, customerId);
   }
 
-  const origin = req.nextUrl.origin;
+  const base = getAppBaseUrl(req);
   const checkoutUrl = await createCheckoutSession({
     customerId,
     priceId,
     userId,
-    successUrl: `${origin}/dashboard/billing?success=1`,
-    cancelUrl: `${origin}/dashboard/billing?canceled=1`,
+    successUrl: `${base}/dashboard/billing?success=1`,
+    cancelUrl: `${base}/dashboard/billing?canceled=1`,
   });
 
   return NextResponse.json({ url: checkoutUrl });
