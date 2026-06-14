@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Check, X, Zap, Crown, Sparkles, ExternalLink, Lock, Instagram, Loader2 } from "lucide-react";
 import { PLAN_LIMITS } from "@/types";
@@ -114,9 +114,35 @@ const PLANS: PlanDef[] = [
 
 function SearchParamToasts() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+
   useEffect(() => {
     if (searchParams.get("success")) {
-      toast.success("Subscription activated! Your plan has been upgraded.");
+      fetch("/api/billing/sync", { method: "POST" })
+        .then(async (res) => {
+          const data = (await res.json()) as {
+            plan?: string;
+            synced?: boolean;
+            error?: string;
+            priceId?: string;
+          };
+          if (data.synced && data.plan && data.plan !== "free") {
+            toast.success("Subscription activated! Your plan has been upgraded.");
+          } else if (data.error?.includes("Unknown Stripe price") || data.priceId) {
+            toast.error(
+              "Payment received, but the price ID is not configured on the server. Check STRIPE_PRO_PRICE_ID in .env.local."
+            );
+          } else if (data.synced) {
+            toast.success("Subscription activated! Your plan has been upgraded.");
+          } else {
+            toast.message("Payment received — finishing setup…");
+          }
+          router.refresh();
+        })
+        .catch(() => {
+          toast.success("Payment received! Refreshing your plan…");
+          router.refresh();
+        });
     }
     if (searchParams.get("canceled")) {
       toast.info("Checkout canceled.");
@@ -130,19 +156,21 @@ function SearchParamToasts() {
       const msg = searchParams.get("msg") ?? "Instagram connection failed.";
       toast.error(decodeURIComponent(msg));
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
   return null;
 }
 
 export default function BillingClient({
   currentPlan,
   stripeEnabled = false,
+  hasStripeCustomer = false,
   instagramConnected = false,
   instagramUsername = null,
   instagramConfigured = false,
 }: {
   currentPlan: Plan;
   stripeEnabled?: boolean;
+  hasStripeCustomer?: boolean;
   instagramConnected?: boolean;
   instagramUsername?: string | null;
   instagramConfigured?: boolean;
@@ -151,6 +179,18 @@ export default function BillingClient({
   const [igLoading, setIgLoading]         = useState(false);
   const [igConnected, setIgConnected]     = useState(instagramConnected);
   const [igUsername, setIgUsername]       = useState(instagramUsername);
+  const router = useRouter();
+
+  // Recover plan when checkout succeeded but webhook/sync lagged.
+  useEffect(() => {
+    if (!stripeEnabled || !hasStripeCustomer || currentPlan !== "free") return;
+    fetch("/api/billing/sync", { method: "POST" })
+      .then(async (res) => {
+        const data = (await res.json()) as { plan?: string; synced?: boolean };
+        if (data.synced && data.plan && data.plan !== "free") router.refresh();
+      })
+      .catch(() => {});
+  }, [stripeEnabled, hasStripeCustomer, currentPlan, router]);
 
   async function handleUpgrade(planKey: Plan) {
     setLoading(planKey);

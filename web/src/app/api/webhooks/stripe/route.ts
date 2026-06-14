@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { constructWebhookEvent, planFromPriceId } from "@/lib/stripe";
+import { constructWebhookEvent, getStripe } from "@/lib/stripe";
 import {
-  getUserByStripeCustomer,
-  updateUserPlan,
-  upsertSubscription,
-} from "@/lib/db";
+  applySubscription,
+  resolveUserForSubscription,
+} from "@/lib/billing-sync";
+import { getUserByStripeCustomer, updateUserPlan, upsertSubscription } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-// Disable body parsing so we get the raw buffer for signature verification
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
   if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
@@ -26,17 +25,16 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event.type) {
+      case "checkout.session.completed":
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
       case "customer.subscription.created":
-      case "customer.subscription.updated": {
-        const sub = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpsert(sub);
+      case "customer.subscription.updated":
+        await handleSubscriptionUpsert(event.data.object as Stripe.Subscription);
         break;
-      }
-      case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(sub);
+      case "customer.subscription.deleted":
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
-      }
     }
   } catch (err) {
     console.error(`Error handling ${event.type}:`, err);
@@ -46,30 +44,32 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
-  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-  const priceId = sub.items.data[0]?.price.id ?? "";
-  const plan = planFromPriceId(priceId);
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  if (session.mode !== "subscription") return;
 
-  const user = await getUserByStripeCustomer(customerId);
+  const subId =
+    typeof session.subscription === "string"
+      ? session.subscription
+      : session.subscription?.id;
+  if (!subId) return;
+
+  const sub = await getStripe().subscriptions.retrieve(subId);
+  await handleSubscriptionUpsert(sub);
+}
+
+async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
+  const user = await resolveUserForSubscription(sub);
   if (!user) {
+    const customerId =
+      typeof sub.customer === "string" ? sub.customer : sub.customer.id;
     console.warn(`No user found for Stripe customer ${customerId}`);
     return;
   }
 
-  await upsertSubscription({
-    id: sub.id,
-    user_id: user.id,
-    stripe_customer_id: customerId,
-    stripe_price_id: priceId,
-    status: sub.status,
-    current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-    current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-    cancel_at_period_end: sub.cancel_at_period_end,
-  });
-
-  if (sub.status === "active" || sub.status === "trialing") {
-    await updateUserPlan(user.id, plan);
+  try {
+    await applySubscription(user.id, sub);
+  } catch (err) {
+    console.error("Subscription upsert skipped:", err);
   }
 }
 

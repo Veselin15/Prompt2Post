@@ -16,6 +16,7 @@ export default async function BillingPage() {
     <BillingClient
       currentPlan={dbUser.plan}
       stripeEnabled={isStripeConfigured()}
+      hasStripeCustomer={!!dbUser.stripe_customer_id}
       instagramConnected={!!dbUser.instagram_user_id}
       instagramUsername={dbUser.instagram_username}
       instagramConfigured={isInstagramConfigured()}

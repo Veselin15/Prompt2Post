@@ -55,6 +55,7 @@ export async function createCheckoutSession(opts: {
     line_items: [{ price: opts.priceId, quantity: 1 }],
     success_url: opts.successUrl,
     cancel_url: opts.cancelUrl,
+    metadata: { clerk_user_id: opts.userId },
     subscription_data: {
       metadata: { clerk_user_id: opts.userId },
     },
