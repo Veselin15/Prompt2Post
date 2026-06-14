@@ -1,30 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Sparkles,
   ChevronDown,
-  Wand2,
-  AtSign,
-  AlignCenter,
-  AlignLeft,
-  Lock,
   Bookmark,
   Loader2,
-  Languages,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { clsx } from "clsx";
 import {
-  POST_FORMATS,
-  OVERLAY_TEMPLATES,
-  TEXT_AMOUNTS,
-  FONT_THEMES,
   PLAN_LIMITS,
-  DEFAULT_ACCENT,
-  LANGUAGES,
   resolveAccent,
   resolveTextAmount,
   resolveFontTheme,
@@ -40,16 +29,17 @@ import {
   type Plan,
   type PlanLimits,
 } from "@/types";
+import { saveBrandKit } from "@/lib/brand-kit-client";
+import DesignOptionsFields, { type DesignOptionValues } from "./DesignOptionsFields";
+import {
+  TONES,
+  STYLES,
+  FORMAT_OPTIONS,
+  snapSlides,
+} from "./design-form-ui";
 import type { DesignState } from "./DesignPreview";
 
-const TONES = ["auto", "inspirational", "educational", "funny", "dramatic", "professional", "promotional"];
-const STYLES = ["auto", "cinematic", "vibrant", "minimalist", "neon", "vintage", "dreamy", "flat", "bold"];
-const SLIDE_COUNTS = [1, 3, 5, 7, 10];
-const FORMAT_OPTIONS: ("auto" | PostFormat)[] = ["auto", "portrait", "square", "story", "wide"];
 const TEMPLATE_OPTIONS: ("auto" | OverlayTemplate)[] = ["auto", "classic", "banner", "quote", "minimal"];
-const AMOUNT_OPTIONS: TextAmount[] = ["minimal", "balanced", "detailed"];
-const FONT_OPTIONS: FontTheme[] = ["modern", "editorial"];
-const ACCENTS = ["#8176fc", "#34e89e", "#ff5c8a", "#ffb020", "#3cc8ff", "#ffffff"];
 
 const MAX_TOPIC = 600;
 const STARTERS = [
@@ -104,87 +94,6 @@ interface Props {
   prefill?: FormPrefill;
 }
 
-/** Snap any slide count to the closest selectable pill value. */
-function snapSlides(n: number | undefined, max: number): number {
-  const allowed = SLIDE_COUNTS.filter((c) => c <= max);
-  if (!n || allowed.length === 0) return Math.min(5, max);
-  return allowed.reduce((best, c) => (Math.abs(c - n) < Math.abs(best - n) ? c : best));
-}
-
-function RatioGlyph({ format }: { format: "auto" | PostFormat }) {
-  if (format === "auto") return <Wand2 className="w-3.5 h-3.5" />;
-  const { width, height } = POST_FORMATS[format];
-  const h = 15;
-  const w = Math.max(8, Math.round((width / height) * h));
-  return (
-    <span
-      className="inline-block rounded-[2px] border border-current opacity-80"
-      style={{ width: `${w}px`, height: `${h}px` }}
-    />
-  );
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <label className="block text-xs text-white/50 mb-1.5 font-medium">
-      {children}
-    </label>
-  );
-}
-
-function Pill({
-  active,
-  onClick,
-  children,
-  title,
-  locked,
-  lockedMsg,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  title?: string;
-  locked?: boolean;
-  lockedMsg?: string;
-}) {
-  if (locked) {
-    return (
-      <button
-        type="button"
-        onClick={() => toast.info(lockedMsg ?? "Upgrade your plan to unlock this feature")}
-        title={lockedMsg}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/[0.03] text-white/25 border border-white/[0.06] cursor-pointer"
-      >
-        {children}
-        <Lock className="w-2.5 h-2.5 ml-0.5 shrink-0" />
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={clsx(
-        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize",
-        active
-          ? "bg-brand-600 text-white shadow-sm shadow-brand-900/40"
-          : "bg-white/5 text-white/60 hover:bg-white/10"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold pt-1">
-      {children}
-    </p>
-  );
-}
-
 export default function GeneratorForm({
   isGenerating,
   maxSlides,
@@ -194,6 +103,7 @@ export default function GeneratorForm({
   currentPlan,
   prefill,
 }: Props) {
+  const router = useRouter();
   const [topic, setTopic] = useState(() => (prefill?.topic ?? "").slice(0, MAX_TOPIC));
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [tone, setTone] = useState(() =>
@@ -231,7 +141,36 @@ export default function GeneratorForm({
 
   // Resolved limits — fall back to creator (= no gates) when not provided
   const lim = planLimits ?? PLAN_LIMITS.creator;
-  const isPaidPlan = currentPlan === "pro" || currentPlan === "creator";
+
+  const designValues: DesignOptionValues = {
+    tone,
+    style,
+    format,
+    template,
+    accent,
+    handle,
+    textAmount,
+    fontTheme,
+    headlineCase,
+    align,
+    language,
+  };
+
+  function updateDesign<K extends keyof DesignOptionValues>(key: K, value: DesignOptionValues[K]) {
+    switch (key) {
+      case "tone": setTone(value as string); break;
+      case "style": setStyle(value as string); break;
+      case "format": setFormat(value as "auto" | PostFormat); break;
+      case "template": setTemplate(value as "auto" | OverlayTemplate); break;
+      case "accent": setAccent(value as string); break;
+      case "handle": setHandle(value as string); break;
+      case "textAmount": setTextAmount(value as TextAmount); break;
+      case "fontTheme": setFontTheme(value as FontTheme); break;
+      case "headlineCase": setHeadlineCase(value as HeadlineCase); break;
+      case "align": setAlign(value as TextAlign); break;
+      case "language": setLanguage(value as string); break;
+    }
+  }
 
   const cappedSlides = Math.min(numSlides, maxSlides);
   const nearLimit = topic.length > MAX_TOPIC * 0.9;
@@ -297,27 +236,23 @@ export default function GeneratorForm({
     if (savingStyle) return;
     setSavingStyle(true);
     try {
-      const res = await fetch("/api/brand-kit", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tone: tone === "auto" ? "" : tone,
-          style: style === "auto" ? "" : style,
-          format,
-          template,
-          accent,
-          handle: handle.trim(),
-          textAmount,
-          fontTheme,
-          headlineCase,
-          textAlign: align,
-          language,
-        }),
+      await saveBrandKit({
+        tone: tone === "auto" ? "" : tone,
+        style: style === "auto" ? "" : style,
+        format,
+        template,
+        accent,
+        handle: handle.trim(),
+        textAmount,
+        fontTheme,
+        headlineCase,
+        textAlign: align,
+        language,
       });
-      if (!res.ok) throw new Error("Could not save your style");
-      toast.success("Style saved — new posts will start with this look");
+      toast.success("Brand Kit saved — new posts will start with this look");
+      router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save your style");
+      toast.error(err instanceof Error ? err.message : "Could not save your Brand Kit");
     } finally {
       setSavingStyle(false);
     }
@@ -391,7 +326,7 @@ export default function GeneratorForm({
           type="button"
           onClick={saveStyle}
           disabled={savingStyle}
-          title="Save the current design as your default for every new post"
+          title="Save the current design as your Brand Kit"
           className="flex items-center gap-1.5 text-xs text-white/40 hover:text-brand-300 transition-colors disabled:opacity-50"
         >
           {savingStyle ? (
@@ -399,7 +334,7 @@ export default function GeneratorForm({
           ) : (
             <Bookmark className="w-3.5 h-3.5" />
           )}
-          Save my style
+          Save Brand Kit
         </button>
       </div>
 

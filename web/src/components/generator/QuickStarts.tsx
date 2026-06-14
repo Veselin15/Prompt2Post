@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Flame,
@@ -8,6 +9,8 @@ import {
   AlertTriangle,
   BarChart3,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 /**
@@ -98,6 +101,15 @@ const RECIPES: Recipe[] = [
   },
 ];
 
+function scrollMask(left: boolean, right: boolean): string | undefined {
+  if (!left && !right) return undefined;
+  if (left && right) {
+    return "linear-gradient(90deg, transparent, black 32px, black calc(100% - 32px), transparent)";
+  }
+  if (left) return "linear-gradient(90deg, transparent, black 32px, black)";
+  return "linear-gradient(90deg, black, black calc(100% - 32px), transparent)";
+}
+
 interface Props {
   /** Whatever the user has typed in the topic box so far. */
   currentTopic: string;
@@ -106,6 +118,35 @@ interface Props {
 
 export default function QuickStarts({ currentTopic, disabled }: Props) {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollHints = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    updateScrollHints();
+    const el = scrollRef.current;
+    if (!el) return;
+
+    el.addEventListener("scroll", updateScrollHints, { passive: true });
+    const observer = new ResizeObserver(updateScrollHints);
+    observer.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", updateScrollHints);
+      observer.disconnect();
+    };
+  }, [updateScrollHints]);
+
+  function scrollBy(delta: number) {
+    scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
+  }
 
   function apply(recipe: Recipe) {
     const subject = currentTopic.trim() || "your topic";
@@ -119,24 +160,56 @@ export default function QuickStarts({ currentTopic, disabled }: Props) {
     router.push(`/dashboard/create?${params.toString()}`);
   }
 
+  const mask = scrollMask(canScrollLeft, canScrollRight);
+
   return (
     <div>
       <p className="text-[11px] font-semibold uppercase tracking-wider text-white/30 mb-2">
         Quick starts
       </p>
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:thin]">
-        {RECIPES.map((r) => (
+      <div className="relative group">
+        {canScrollLeft && (
           <button
-            key={r.id}
-            onClick={() => apply(r)}
-            disabled={disabled}
-            title={r.desc}
-            className="group flex items-center gap-2 shrink-0 text-xs bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 hover:border-white/20 text-white/65 hover:text-white px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            type="button"
+            aria-label="Scroll quick starts left"
+            onClick={() => scrollBy(-220)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-[#12121a]/95 border border-white/10 text-white/45 hover:text-white hover:border-white/20 shadow-md backdrop-blur-sm transition-colors"
           >
-            {r.icon}
-            {r.label}
+            <ChevronLeft className="w-4 h-4" />
           </button>
-        ))}
+        )}
+        {canScrollRight && (
+          <button
+            type="button"
+            aria-label="Scroll quick starts right"
+            onClick={() => scrollBy(220)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-[#12121a]/95 border border-white/10 text-white/45 hover:text-white hover:border-white/20 shadow-md backdrop-blur-sm transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+        <div
+          ref={scrollRef}
+          className="flex gap-2 overflow-x-auto scrollbar-none scroll-smooth py-0.5 -mx-1 px-1"
+          style={
+            mask
+              ? { maskImage: mask, WebkitMaskImage: mask }
+              : undefined
+          }
+        >
+          {RECIPES.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => apply(r)}
+              disabled={disabled}
+              title={r.desc}
+              className="group flex items-center gap-2 shrink-0 text-xs bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 hover:border-white/20 text-white/65 hover:text-white px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {r.icon}
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -13,9 +13,11 @@ import {
   Hash,
   Star,
 } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import InteractiveStudio from "@/components/landing/InteractiveStudio";
 import StatsBand from "@/components/landing/StatsBand";
 import Pricing from "@/components/landing/Pricing";
+import SiteFooter from "@/components/landing/SiteFooter";
 
 const MARQUEE_TOPICS = [
   "5 mistakes killing your gym progress",
@@ -39,10 +41,7 @@ export default function LandingPage() {
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 glass border-t-0 border-l-0 border-r-0">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <Sparkles className="w-5 h-5 text-brand-400" />
-          <span className="gradient-text">Prompt2Post</span>
-        </Link>
+        <BrandLogo className="text-lg" />
         <div className="hidden md:flex items-center gap-7 text-sm text-white/55">
           <a href="#studio" className="hover:text-white transition-colors">Live demo</a>
           <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -331,9 +330,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-white/10 py-8 text-center text-white/40 text-sm">
-        <p>© 2026 Prompt2Post. The AI content studio for Instagram creators.</p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

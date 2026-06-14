@@ -3,14 +3,45 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import "./globals.css";
 
+// `||` (not `??`) so an empty-string env var falls through to the next option —
+// otherwise `new URL("")` below throws "Invalid URL" during the build.
+const siteUrl =
+  process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Prompt2Post – AI Social Media Post Generator",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Prompt2Post – The AI content studio for Instagram creators",
+    template: "%s · Prompt2Post",
+  },
   description:
-    "Transform any topic into stunning, ready-to-post social media carousels with AI-generated copy, facts, and images.",
+    "Type one topic and Prompt2Post plans, writes, designs, and schedules a scroll-stopping Instagram carousel — with on-brand copy, AI images, captions, and hashtags.",
+  applicationName: "Prompt2Post",
+  keywords: [
+    "AI Instagram carousel generator",
+    "social media post generator",
+    "AI content studio",
+    "Instagram scheduler",
+    "carousel maker",
+  ],
+  authors: [{ name: "Prompt2Post" }],
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Prompt2Post",
-    description: "AI-powered social media post generator",
+    title: "Prompt2Post – The AI content studio for Instagram creators",
+    description:
+      "One topic in. A whole carousel out. AI plans, writes, designs, and schedules your Instagram posts.",
+    url: siteUrl,
+    siteName: "Prompt2Post",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Prompt2Post",
+    description: "One topic in. A whole carousel out — the AI content studio for Instagram creators.",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

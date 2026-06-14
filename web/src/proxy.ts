@@ -4,6 +4,13 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // Marketing & legal pages
+  "/privacy",
+  "/terms",
+  // SEO / discovery files and an unauthenticated health probe
+  "/robots.txt",
+  "/sitemap.xml",
+  "/api/health",
   "/api/webhooks/stripe",
   "/api/clerk/webhook",
   "/api/files(.*)",

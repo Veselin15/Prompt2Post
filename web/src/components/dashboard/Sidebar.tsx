@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+import BrandLogo from "@/components/BrandLogo";
 import {
-  Sparkles,
   PlusCircle,
   Clock,
   CreditCard,
@@ -72,10 +72,7 @@ export default function Sidebar() {
     <>
       {/* ── Mobile top bar ── */}
       <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 h-14 glass border-t-0 border-x-0">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold">
-          <Sparkles className="w-5 h-5 text-brand-400" />
-          <span className="gradient-text">Prompt2Post</span>
-        </Link>
+        <BrandLogo />
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close menu" : "Open menu"}
@@ -104,9 +101,8 @@ export default function Sidebar() {
 
       {/* ── Desktop sidebar ── */}
       <aside className="hidden md:flex flex-col h-full w-60 glass border-r border-white/10 shrink-0">
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-white/10">
-          <Sparkles className="w-5 h-5 text-brand-400" />
-          <span className="font-bold text-base gradient-text">Prompt2Post</span>
+        <div className="px-5 py-5 border-b border-white/10">
+          <BrandLogo textClassName="font-bold text-base gradient-text" />
         </div>
         <div className="px-3 pt-3">
           <button

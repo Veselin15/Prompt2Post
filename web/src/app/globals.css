@@ -79,6 +79,15 @@
     @apply rounded-2xl border border-white/[0.12] bg-white/[0.055];
   }
 
+  /* Hide scrollbars while keeping scroll/drag — for horizontal chip rows, etc. */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Cheap, paint-once ambient backdrop (no animated blur filters). A single
      fixed layer with baked radial gradients — composited, never re-rasterized. */
   .ambient {
@@ -273,6 +282,23 @@
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Legal pages (privacy / terms) — light prose styling. */
+.legal-prose h2 {
+  @apply text-xl font-semibold text-white mt-10 mb-2;
+}
+.legal-prose p {
+  @apply text-white/70;
+}
+.legal-prose a {
+  @apply text-brand-300 underline underline-offset-2 hover:text-brand-200;
+}
+.legal-prose ul {
+  @apply list-disc pl-5 space-y-1.5 text-white/70;
+}
+.legal-prose strong {
+  @apply text-white/90 font-semibold;
 }
 
 /* Clerk auth — fallback fixes when appearance tokens miss social buttons */

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Sparkles,
@@ -20,7 +21,8 @@ type Slide = {
   tag: string;
   title: string;
   body?: string;
-  gradient: string;
+  image: string; // themed AI-generated background, /public/landing/*.jpg
+  gradient: string; // fallback while the image loads
   accent: string; // text color for eyebrow
 };
 
@@ -53,6 +55,7 @@ const PRESETS: Preset[] = [
         tag: "The Hook",
         title: "93% Make Mistake #1",
         body: "And it quietly stalls every workout.",
+        image: "/landing/fitness-0.jpg",
         gradient: "linear-gradient(135deg,#059669 0%,#0f766e 45%,#0b1120 100%)",
         accent: "#6ee7b7",
       },
@@ -60,6 +63,7 @@ const PRESETS: Preset[] = [
         tag: "Mistake 02",
         title: "Junk Volume",
         body: "More sets ≠ more muscle. Train hard, not long.",
+        image: "/landing/fitness-1.jpg",
         gradient: "linear-gradient(135deg,#0ea5e9 0%,#1e3a8a 50%,#0b1120 100%)",
         accent: "#7dd3fc",
       },
@@ -67,6 +71,7 @@ const PRESETS: Preset[] = [
         tag: "Do This",
         title: "Track Every Set",
         body: "Progressive overload beats motivation.",
+        image: "/landing/fitness-2.jpg",
         gradient: "linear-gradient(135deg,#10b981 0%,#065f46 45%,#031b14 100%)",
         accent: "#6ee7b7",
       },
@@ -87,6 +92,7 @@ const PRESETS: Preset[] = [
         tag: "Lisbon",
         title: "Skip the Crowds",
         body: "7 spots locals actually love.",
+        image: "/landing/travel-0.jpg",
         gradient: "linear-gradient(135deg,#6366f1 0%,#7e22ce 50%,#1e1b4b 100%)",
         accent: "#c4b5fd",
       },
@@ -94,6 +100,7 @@ const PRESETS: Preset[] = [
         tag: "Gem 03",
         title: "LX Factory",
         body: "Old factory → design + coffee heaven.",
+        image: "/landing/travel-1.jpg",
         gradient: "linear-gradient(135deg,#0891b2 0%,#1e40af 55%,#0b1120 100%)",
         accent: "#67e8f9",
       },
@@ -101,6 +108,7 @@ const PRESETS: Preset[] = [
         tag: "Pro Tip",
         title: "Go at Sunrise",
         body: "Empty streets, golden tiles, no lines.",
+        image: "/landing/travel-2.jpg",
         gradient: "linear-gradient(135deg,#7c3aed 0%,#4338ca 50%,#0b1120 100%)",
         accent: "#c4b5fd",
       },
@@ -121,6 +129,7 @@ const PRESETS: Preset[] = [
         tag: "The Goal",
         title: "Your First $10k",
         body: "Without a bigger paycheck.",
+        image: "/landing/money-0.jpg",
         gradient: "linear-gradient(135deg,#f59e0b 0%,#b45309 50%,#1c1207 100%)",
         accent: "#fcd34d",
       },
@@ -128,6 +137,7 @@ const PRESETS: Preset[] = [
         tag: "Step 01",
         title: "Pay Yourself First",
         body: "Automate 20% the day you get paid.",
+        image: "/landing/money-1.jpg",
         gradient: "linear-gradient(135deg,#f97316 0%,#9a3412 50%,#1c0f07 100%)",
         accent: "#fdba74",
       },
@@ -135,6 +145,7 @@ const PRESETS: Preset[] = [
         tag: "Step 02",
         title: "Kill One Subscription",
         body: "$40/mo = $480/yr back in your pocket.",
+        image: "/landing/money-2.jpg",
         gradient: "linear-gradient(135deg,#d97706 0%,#7c2d12 55%,#160a05 100%)",
         accent: "#fcd34d",
       },
@@ -155,6 +166,7 @@ const PRESETS: Preset[] = [
         tag: "5 Min Recipe",
         title: "30g Protein, 3 Items",
         body: "No protein powder needed.",
+        image: "/landing/food-0.jpg",
         gradient: "linear-gradient(135deg,#fb7185 0%,#be123c 50%,#1f0a12 100%)",
         accent: "#fda4af",
       },
@@ -162,6 +174,7 @@ const PRESETS: Preset[] = [
         tag: "You Need",
         title: "Eggs · Skyr · Oats",
         body: "That's the whole list. Promise.",
+        image: "/landing/food-1.jpg",
         gradient: "linear-gradient(135deg,#e879f9 0%,#a21caf 50%,#1a0820 100%)",
         accent: "#f5d0fe",
       },
@@ -169,6 +182,7 @@ const PRESETS: Preset[] = [
         tag: "The Result",
         title: "Creamy & Filling",
         body: "Keeps you full till lunch.",
+        image: "/landing/food-2.jpg",
         gradient: "linear-gradient(135deg,#f472b6 0%,#9d174d 55%,#1c0712 100%)",
         accent: "#fbcfe8",
       },
@@ -387,7 +401,15 @@ export default function InteractiveStudio() {
                   className="absolute inset-0"
                   style={{ background: current.gradient }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/10" />
+                  <Image
+                    src={current.image}
+                    alt=""
+                    fill
+                    sizes="330px"
+                    priority={slide === 0}
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/25" />
                   <div
                     className="absolute top-4 left-4 h-1 w-9 rounded-full"
                     style={{ background: current.accent }}
