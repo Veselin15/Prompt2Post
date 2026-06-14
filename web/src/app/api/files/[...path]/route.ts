@@ -38,7 +38,8 @@ export async function GET(
     return new NextResponse(data, {
       headers: {
         "Content-Type": MIME[ext] ?? "application/octet-stream",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        // Slides are overwritten in place after edits — never mark as immutable.
+        "Cache-Control": ext === ".zip" ? "private, max-age=60" : "private, no-cache",
       },
     });
   } catch {

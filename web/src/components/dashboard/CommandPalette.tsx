@@ -12,6 +12,7 @@ import {
   Search,
   CornerDownLeft,
   Home,
+  Bookmark,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -32,6 +33,14 @@ const COMMANDS: Command[] = [
     href: "/dashboard/create",
     icon: <PlusCircle className="w-4 h-4 text-brand-400" />,
     keywords: "new post generate carousel make",
+  },
+  {
+    id: "brand-kit",
+    label: "Brand Kit",
+    hint: "Save your default tone, colors, and fonts",
+    href: "/dashboard/brand-kit",
+    icon: <Bookmark className="w-4 h-4 text-purple-400" />,
+    keywords: "brand kit style colors fonts tone defaults save",
   },
   {
     id: "ideas",

@@ -94,7 +94,7 @@ export default async function DashboardOverview() {
       label: "Save your Brand Kit",
       desc: "Make every post start in your style",
       done: !!dbUser.brand_kit,
-      href: "/dashboard/create",
+      href: "/dashboard/brand-kit",
     },
     ...(limits.instagram_posting
       ? [{

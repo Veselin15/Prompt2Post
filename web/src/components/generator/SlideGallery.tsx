@@ -15,7 +15,7 @@ import {
 import { clsx } from "clsx";
 import { toast } from "sonner";
 import { POST_FORMATS, type SlideData, type PostFormat } from "@/types";
-import { downloadUrl, downloadSlides, slugify } from "@/lib/download";
+import { downloadUrl, downloadSlides, slugify, cacheBustUrl } from "@/lib/download";
 
 interface Props {
   slides: SlideData[];
@@ -80,10 +80,11 @@ export default function SlideGallery({
   const activeImageUrl = withVersion(activeSlide?.image_url, versions[active]);
 
   async function saveOne() {
-    if (!activeImageUrl) return;
+    if (!activeSlide?.image_url) return;
     setBusy(true);
     try {
-      await downloadUrl(activeImageUrl, `${slugify(topic)}_slide_${String(active + 1).padStart(2, "0")}.jpg`);
+      const url = cacheBustUrl(activeSlide.image_url, versions[active]);
+      await downloadUrl(url, `${slugify(topic)}_slide_${String(active + 1).padStart(2, "0")}.jpg`);
     } catch {
       toast.error("Could not download image");
     } finally {
@@ -94,7 +95,7 @@ export default function SlideGallery({
   async function saveAll() {
     setBusy(true);
     try {
-      await downloadSlides(readySlides, topic);
+      await downloadSlides(readySlides, topic, versions);
       toast.success(`Downloaded ${readySlides.length} image${readySlides.length > 1 ? "s" : ""}`);
     } catch {
       toast.error("Could not download images");

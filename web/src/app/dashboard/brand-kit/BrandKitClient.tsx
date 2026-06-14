@@ -12,7 +12,6 @@ import { TONES, STYLES, FORMAT_OPTIONS } from "@/components/generator/design-for
 import { saveBrandKit, clearBrandKit } from "@/lib/brand-kit-client";
 import {
   PLAN_LIMITS,
-  DEFAULT_ACCENT,
   resolveAccent,
   resolveTextAmount,
   resolveFontTheme,
