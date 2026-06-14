@@ -5,8 +5,11 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: prompt2post
-      POSTGRES_PASSWORD: prompt2post
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prompt2post}
       POSTGRES_DB: prompt2post
+    # Port is only published for local development (psql / db:migrate). In a
+    # pure-production deploy you can drop this — the app reaches Postgres over
+    # the internal compose network.
     ports:
       - "5432:5432"
     volumes:
@@ -18,5 +21,35 @@ services:
       timeout: 5s
       retries: 5
 
+  # The Next.js app. Build & run with:
+  #   docker compose --env-file .env.local up -d --build
+  # (the --env-file flag feeds the NEXT_PUBLIC_* build args below.)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    container_name: prompt2post-app
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      # Override the host: inside the compose network Postgres is "postgres".
+      DATABASE_URL: postgresql://prompt2post:${POSTGRES_PASSWORD:-prompt2post}@postgres:5432/prompt2post
+      # Run the publishing scheduler in-process (no external cron on a homeserver).
+      ENABLE_INTERNAL_CRON: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Generated slides / ZIPs persist across container restarts.
+      - app_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
+  app_storage:

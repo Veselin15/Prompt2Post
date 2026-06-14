@@ -270,6 +270,64 @@ web/
 │   └── app/api/files/      # Serves stored files
 ```
 
-## Production notes
+## Deploying to your homeserver (Docker + Cloudflare)
 
-For production, point `DATABASE_URL` at any managed Postgres (Neon, Railway, RDS, etc.). Replace local file storage with S3/R2 when you deploy — the `storage.ts` module is the only place to swap.
+The app ships as a self-contained Next.js **standalone** image. `docker-compose.yml`
+runs the app and Postgres together; generated slides persist on a named volume, so
+the local-filesystem storage works fine on a long-running server (no S3 needed).
+
+### 1. Configure env
+
+```bash
+cp .env.local.example .env.local
+# Fill in: Clerk keys, GROQ_API_KEY, Stripe keys, Meta/FB keys, CRON_SECRET.
+# Set the public URL to your Cloudflare domain (HTTPS), e.g.:
+#   NEXT_PUBLIC_URL=https://app.yourdomain.com
+#   NEXT_PUBLIC_APP_URL=https://app.yourdomain.com
+```
+
+`NEXT_PUBLIC_*` values are baked into the browser bundle at **build** time, so the
+compose `build.args` read them via `--env-file` below.
+
+### 2. Build & run
+
+```bash
+docker compose --env-file .env.local up -d --build
+```
+
+This starts:
+
+- **`postgres`** — schema auto-applies from `db/init.sql` on first boot.
+- **`app`** — the Next.js server on port **3000**, with `ENABLE_INTERNAL_CRON=true`
+  so scheduled posts publish in-process (no external cron needed on a homeserver).
+  Slides/ZIPs persist on the `app_storage` volume.
+
+Verify it's healthy: `curl http://localhost:3000/api/health` → `{"status":"ok"}`.
+
+### 3. Expose via Cloudflare Tunnel
+
+Point a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+at `http://localhost:3000` (or the `app` container). Then:
+
+- Set your tunnel hostname (e.g. `app.yourdomain.com`) as `NEXT_PUBLIC_URL` /
+  `NEXT_PUBLIC_APP_URL` and rebuild so OAuth redirects + share links use HTTPS.
+- In **Clerk** and **Meta** dashboards, add the production domain to allowed
+  origins / OAuth redirect URIs (`{NEXT_PUBLIC_URL}/api/instagram/callback`).
+- In **Stripe**, point the webhook at `{NEXT_PUBLIC_URL}/api/webhooks/stripe`.
+
+### Updating
+
+```bash
+git pull
+docker compose --env-file .env.local up -d --build   # rebuilds the app image
+```
+
+Schema changes in `db/init.sql` are idempotent — apply them with
+`docker compose exec -T postgres psql -U prompt2post -d prompt2post -f /docker-entrypoint-initdb.d/01-init.sql`.
+
+### Hosting on Vercel instead
+
+The repo also includes `vercel.json` (a 5-min cron for `/api/instagram/schedule/run`).
+On Vercel you'd swap the local-filesystem `storage.ts` for S3/R2 — that module is
+the only place to change — and leave `ENABLE_INTERNAL_CRON` unset (Vercel Cron
+calls the route with the `CRON_SECRET` bearer instead).
