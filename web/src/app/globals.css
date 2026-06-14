@@ -68,6 +68,40 @@
   .glass-hover {
     @apply hover:bg-white/8 transition-colors duration-200;
   }
+
+  /* Lightweight card surface — looks like glass but has NO backdrop-blur, so
+     it doesn't re-composite on every scroll frame. Use this for the many
+     landing cards; reserve real .glass for the few elements over content. */
+  .panel {
+    @apply rounded-2xl border border-white/10 bg-white/[0.035];
+  }
+  .panel-strong {
+    @apply rounded-2xl border border-white/[0.12] bg-white/[0.055];
+  }
+
+  /* Cheap, paint-once ambient backdrop (no animated blur filters). A single
+     fixed layer with baked radial gradients — composited, never re-rasterized. */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 50% -8%, rgba(103, 80, 248, 0.20), transparent 70%),
+      radial-gradient(45% 45% at 92% 8%, rgba(228, 64, 95, 0.12), transparent 70%),
+      radial-gradient(50% 50% at 6% 18%, rgba(192, 132, 252, 0.12), transparent 70%);
+  }
+  /* Subtle dotted grid, also paint-once. */
+  .grid-fade {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(circle at 50% 12%, black, transparent 78%);
+    -webkit-mask-image: radial-gradient(circle at 50% 12%, black, transparent 78%);
+  }
   .gradient-text {
     @apply bg-gradient-to-r from-brand-300 via-brand-400 to-purple-400 bg-clip-text text-transparent;
   }
@@ -185,6 +219,27 @@
     animation-play-state: paused;
   }
 
+  /* Instagram story-ring gradient (for avatar rings, accents). */
+  .ig-ring {
+    background: conic-gradient(
+      from 0deg,
+      #feda75,
+      #fa7e1e,
+      #d62976,
+      #962fbf,
+      #4f5bd5,
+      #feda75
+    );
+  }
+  /* Spinning conic accent used in the generation loader. */
+  .spin-conic {
+    background: conic-gradient(from 0deg, transparent 0deg, #8176fc 90deg, #c084fc 180deg, transparent 360deg);
+    animation: spin 1.1s linear infinite;
+  }
+  .animate-pop {
+    animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
   .animate-float {
     animation: float 7s ease-in-out infinite;
   }
@@ -215,4 +270,30 @@
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(var(--float-rotate, 0deg)); }
   50%      { transform: translateY(-14px) rotate(var(--float-rotate, 0deg)); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Clerk auth — fallback fixes when appearance tokens miss social buttons */
+.cl-socialButtonsBlockButton {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+}
+.cl-socialButtonsBlockButton:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+.cl-socialButtonsBlockButton span,
+.cl-socialButtonsBlockButtonText {
+  color: #fff !important;
+}
+.cl-formButtonPrimary {
+  background: linear-gradient(135deg, #6750f8 0%, #5530ef 100%) !important;
+  box-shadow: 0 4px 20px rgba(103, 80, 248, 0.35) !important;
+}
+.cl-footerActionLink {
+  color: #a89aff !important;
+  font-weight: 600 !important;
 }
