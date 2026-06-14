@@ -144,7 +144,7 @@ const PRESETS: Preset[] = [
       {
         tag: "Step 02",
         title: "Kill One Subscription",
-        body: "$40/mo = $480/yr back in your pocket.",
+        body: "€40/mo = €480/yr back in your pocket.",
         image: "/landing/money-2.jpg",
         gradient: "linear-gradient(135deg,#d97706 0%,#7c2d12 55%,#160a05 100%)",
         accent: "#fcd34d",

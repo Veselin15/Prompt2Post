@@ -27,7 +27,7 @@ const PLANS: PlanDef[] = [
   {
     key: "free",
     name: "Free",
-    price: "$0",
+    price: "€0",
     period: "/month",
     icon: <Sparkles className="w-5 h-5 text-white/40" />,
     tagline: "Everything you need to get started.",
@@ -58,7 +58,7 @@ const PLANS: PlanDef[] = [
   {
     key: "pro",
     name: "Pro",
-    price: "$9",
+    price: "€9",
     period: "/month",
     icon: <Zap className="w-5 h-5 text-yellow-400" />,
     tagline: "All features unlocked. Serious creators.",
@@ -87,7 +87,7 @@ const PLANS: PlanDef[] = [
   {
     key: "creator",
     name: "Creator",
-    price: "$29",
+    price: "€29",
     period: "/month",
     icon: <Crown className="w-5 h-5 text-yellow-300" />,
     tagline: "Unlimited power for professional creators.",
@@ -132,20 +132,22 @@ function SearchParamToasts() {
             toast.error(
               "Payment received, but the price ID is not configured on the server. Check STRIPE_PRO_PRICE_ID in .env.local."
             );
-          } else if (data.synced) {
-            toast.success("Subscription activated! Your plan has been upgraded.");
           } else {
-            toast.message("Payment received — finishing setup…");
+            toast.success("Subscription activated! Your plan has been upgraded.");
           }
+          // Remove ?success=1 from URL so sync doesn't re-run on back/refresh.
+          router.replace("/dashboard/billing");
           router.refresh();
         })
         .catch(() => {
           toast.success("Payment received! Refreshing your plan…");
+          router.replace("/dashboard/billing");
           router.refresh();
         });
     }
     if (searchParams.get("canceled")) {
       toast.info("Checkout canceled.");
+      router.replace("/dashboard/billing");
     }
     const ig = searchParams.get("instagram");
     if (ig === "connected") {
@@ -201,7 +203,20 @@ export default function BillingClient({
         body: JSON.stringify({ plan: planKey }),
       });
       const data = await res.json();
+      if (res.status === 409) {
+        toast.info("You're already on this plan.");
+        setLoading(null);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Failed");
+      // Already has active sub — send to portal to change plan instead.
+      if (data.redirect_to_portal) {
+        const portalRes = await fetch("/api/billing/portal", { method: "POST" });
+        const portalData = await portalRes.json();
+        if (!portalRes.ok) throw new Error(portalData.error ?? "Failed to open portal");
+        window.location.href = portalData.url;
+        return;
+      }
       window.location.href = data.url;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to open checkout");

@@ -8,6 +8,7 @@ import {
 } from "@/lib/stripe";
 import { getUserById, updateUserStripeId } from "@/lib/db";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { getActiveStripeSubscription } from "@/lib/billing-sync";
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -37,6 +38,14 @@ export async function POST(req: NextRequest) {
   const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
   const dbUser = await getUserById(userId);
 
+  // Guard: if the user already has this plan in DB, reject immediately.
+  if (dbUser?.plan === plan) {
+    return NextResponse.json(
+      { error: `You are already on the ${plan} plan.` },
+      { status: 409 }
+    );
+  }
+
   const customerId = await getOrCreateCustomer(
     userId,
     email,
@@ -45,6 +54,14 @@ export async function POST(req: NextRequest) {
 
   if (!dbUser?.stripe_customer_id) {
     await updateUserStripeId(userId, customerId);
+  }
+
+  // Guard: if Stripe already has an active subscription for this customer,
+  // redirect to the customer portal to change plan instead of creating a new one.
+  const existingSub = await getActiveStripeSubscription(customerId);
+  if (existingSub) {
+    const base = getAppBaseUrl(req);
+    return NextResponse.json({ redirect_to_portal: true, returnUrl: `${base}/dashboard/billing` }, { status: 200 });
   }
 
   const base = getAppBaseUrl(req);

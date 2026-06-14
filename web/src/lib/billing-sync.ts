@@ -3,6 +3,7 @@ import { getStripe, planFromPriceId } from "@/lib/stripe";
 import {
   getUserById,
   getUserByStripeCustomer,
+  getSubscriptionByUser,
   updateUserPlan,
   updateUserStripeId,
   upsertSubscription,
@@ -19,6 +20,7 @@ export async function resolveUserForSubscription(
   let user = await getUserByStripeCustomer(customerId);
   if (user) return user;
 
+  // Fallback 1: clerk_user_id in subscription metadata (set at checkout creation).
   const clerkId = sub.metadata?.clerk_user_id;
   if (clerkId) {
     user = await getUserById(clerkId);
@@ -28,6 +30,7 @@ export async function resolveUserForSubscription(
     }
   }
 
+  // Fallback 2: clerk_user_id in customer metadata.
   try {
     const customer = await getStripe().customers.retrieve(customerId);
     if (!customer.deleted && customer.metadata?.clerk_user_id) {
@@ -60,9 +63,10 @@ export async function applySubscription(
     priceId
   ) {
     console.error(
-      `Stripe price ${priceId} is not mapped — set STRIPE_PRO_PRICE_ID / STRIPE_CREATOR_PRICE_ID to match your Stripe products.`
+      `[billing] Stripe price ${priceId} is not mapped. Set STRIPE_PRO_PRICE_ID / STRIPE_CREATOR_PRICE_ID. Skipping plan update.`
     );
-    throw new Error(`Unknown Stripe price: ${priceId}`);
+    // Return "free" without updating DB — let the caller decide whether to retry.
+    return "free";
   }
 
   await upsertSubscription({
@@ -84,7 +88,11 @@ export async function applySubscription(
   return "free";
 }
 
-/** Pull the user's active Stripe subscription and sync plan to the DB. */
+/**
+ * Pull the user's active Stripe subscription and sync plan to the DB.
+ * NEVER downgrades the user if no active subscription is found during a sync call —
+ * only the subscription.deleted webhook should downgrade.
+ */
 export async function syncUserSubscriptionFromStripe(
   userId: string,
   customerId: string
@@ -95,25 +103,47 @@ export async function syncUserSubscriptionFromStripe(
     const { data } = await stripe.subscriptions.list({
       customer: customerId,
       status,
-      limit: 1,
+      limit: 5,
     });
-    const sub = data[0];
-    if (!sub) continue;
 
-    try {
-      const plan = await applySubscription(userId, sub);
-      return { plan, synced: true };
-    } catch (err) {
+    for (const sub of data) {
       const priceId = sub.items.data[0]?.price.id ?? "";
-      return {
-        plan: "free",
-        synced: false,
-        error: err instanceof Error ? err.message : "sync_failed",
-        priceId,
-      };
+      const plan = planFromPriceId(priceId);
+      if (plan === "free" && priceId) {
+        return {
+          plan: "free",
+          synced: false,
+          error: `Unknown Stripe price: ${priceId}`,
+          priceId,
+        };
+      }
+      const resolved = await applySubscription(userId, sub);
+      if (resolved !== "free") {
+        return { plan: resolved, synced: true };
+      }
     }
   }
 
-  await updateUserPlan(userId, "free");
-  return { plan: "free", synced: true };
+  // No active subscription found — do NOT downgrade here.
+  // The subscription.deleted webhook is responsible for downgrades.
+  return { plan: "free", synced: false, error: "no_active_subscription" };
+}
+
+/**
+ * Check if a Stripe customer already has an active/trialing subscription.
+ * Used to prevent duplicate checkout sessions.
+ */
+export async function getActiveStripeSubscription(
+  customerId: string
+): Promise<Stripe.Subscription | null> {
+  const stripe = getStripe();
+  for (const status of ["active", "trialing"] as const) {
+    const { data } = await stripe.subscriptions.list({
+      customer: customerId,
+      status,
+      limit: 1,
+    });
+    if (data[0]) return data[0];
+  }
+  return null;
 }
