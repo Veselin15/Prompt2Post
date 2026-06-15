@@ -169,6 +169,37 @@ async function graphPost<T>(
 }
 
 /**
+ * Media containers are processed asynchronously — Instagram has to fetch and
+ * validate the image_url before media_publish can reference it. Publishing too
+ * early fails with "Media ID is not available", so poll status_code until the
+ * container is FINISHED (or surface ERROR_DETAILS if Instagram rejected it).
+ */
+async function waitUntilContainerReady(
+  containerId: string,
+  accessToken: string,
+  timeoutMs = 60_000
+): Promise<void> {
+  const start = Date.now();
+  while (true) {
+    const res  = await fetch(
+      `${GRAPH}/${containerId}?fields=status_code,status&access_token=${accessToken}`
+    );
+    const data = await res.json() as { status_code?: string; status?: string } & GraphError;
+    if (!res.ok) {
+      throw new Error(data.error?.message ?? `Graph API ${res.status}`);
+    }
+    if (data.status_code === "FINISHED") return;
+    if (data.status_code === "ERROR") {
+      throw new Error(`Instagram failed to process the image: ${data.status ?? "unknown error"}`);
+    }
+    if (Date.now() - start > timeoutMs) {
+      throw new Error("Timed out waiting for Instagram to process the media.");
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+}
+
+/**
  * Post a single image or a carousel to Instagram.
  * Returns the published media ID.
  *
@@ -202,6 +233,7 @@ async function publishSingle(
     accessToken,
     { image_url: imageUrl, caption }
   );
+  await waitUntilContainerReady(containerId, accessToken);
 
   const { id: mediaId } = await graphPost<{ id: string }>(
     `${igUserId}/media_publish`,
@@ -225,6 +257,7 @@ async function publishCarousel(
       accessToken,
       { image_url: imageUrl, is_carousel_item: "true" }
     );
+    await waitUntilContainerReady(id, accessToken);
     childIds.push(id);
   }
 
@@ -234,6 +267,7 @@ async function publishCarousel(
     accessToken,
     { media_type: "CAROUSEL", children: childIds.join(","), caption }
   );
+  await waitUntilContainerReady(carouselId, accessToken);
 
   // Publish
   const { id: mediaId } = await graphPost<{ id: string }>(
