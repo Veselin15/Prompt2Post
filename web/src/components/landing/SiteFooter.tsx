@@ -14,6 +14,7 @@ export default function SiteFooter() {
           <a href="/#pricing" className="hover:text-white transition-colors">Pricing</a>
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <a href="mailto:support@prompt2post.app" className="hover:text-white transition-colors">Support</a>
         </nav>
       </div>
       <div className="border-t border-white/[0.06] py-5 text-center text-white/40 text-xs">
