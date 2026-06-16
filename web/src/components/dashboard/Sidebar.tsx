@@ -72,7 +72,7 @@ export default function Sidebar() {
     <>
       {/* ── Mobile top bar ── */}
       <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 h-14 glass border-t-0 border-x-0">
-        <BrandLogo />
+        <BrandLogo iconSize={34} textClassName="text-base" />
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close menu" : "Open menu"}
@@ -92,7 +92,7 @@ export default function Sidebar() {
           <div className="absolute top-14 left-0 bottom-0 w-64 bg-[#0e0e16] border-r border-white/10 flex flex-col animate-fade-in">
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
             <div className="p-4 border-t border-white/10 flex items-center gap-3">
-              <UserButton appearance={{ variables: { colorPrimary: "#6750f8" } }} />
+              <UserButton appearance={{ variables: { colorPrimary: "#8B3EDE" } }} />
               <span className="text-xs text-white/40">Account</span>
             </div>
           </div>

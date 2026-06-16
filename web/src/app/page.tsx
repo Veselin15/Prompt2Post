@@ -41,7 +41,7 @@ export default function LandingPage() {
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 glass border-t-0 border-l-0 border-r-0">
-        <BrandLogo />
+        <BrandLogo iconSize={42} textClassName="text-xl" />
         <div className="hidden md:flex items-center gap-7 text-sm text-white/55">
           <a href="#studio" className="hover:text-white transition-colors">Live demo</a>
           <a href="#features" className="hover:text-white transition-colors">Features</a>

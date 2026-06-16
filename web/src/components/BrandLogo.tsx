@@ -7,15 +7,14 @@ import { clsx } from "clsx";
 
 interface BrandLogoProps {
   className?: string;
-  /** When true, renders only the icon mark without the wordmark. */
-  iconOnly?: boolean;
-  height?: number;
+  iconSize?: number;
+  textClassName?: string;
 }
 
 export default function BrandLogo({
   className,
-  iconOnly = false,
-  height = 32,
+  iconSize = 40,
+  textClassName,
 }: BrandLogoProps) {
   const pathname = usePathname();
 
@@ -30,29 +29,21 @@ export default function BrandLogo({
     <Link
       href="/"
       onClick={handleClick}
-      className={clsx("flex items-center", className)}
+      className={clsx("flex items-center gap-2.5", className)}
       aria-label="Prompt2Post home"
     >
-      {iconOnly ? (
-        <Image
-          src="/logo.png"
-          alt="Prompt2Post"
-          height={height}
-          width={height}
-          className="shrink-0"
-          priority
-        />
-      ) : (
-        <Image
-          src="/logo_text.png"
-          alt="Prompt2Post"
-          height={height}
-          width={0}
-          style={{ width: "auto" }}
-          className="shrink-0"
-          priority
-        />
-      )}
+      <Image
+        src="/logo.png"
+        alt=""
+        height={iconSize}
+        width={iconSize}
+        className="shrink-0"
+        priority
+      />
+      <span className={clsx("font-bold leading-none text-lg", textClassName)}>
+        <span style={{ color: "#1B75B8" }}>Prompt2</span>
+        <span style={{ color: "#F07030" }}>Post</span>
+      </span>
     </Link>
   );
 }

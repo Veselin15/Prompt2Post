@@ -1,14 +1,11 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function SiteFooter() {
   return (
     <footer className="relative z-10 border-t border-white/10">
       <div className="max-w-5xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-        <Link href="/" className="flex items-center gap-2 font-bold">
-          <Sparkles className="w-4 h-4 text-brand-400" />
-          <span className="gradient-text">Prompt2Post</span>
-        </Link>
+        <BrandLogo iconSize={38} textClassName="text-lg" />
         <nav className="flex items-center gap-6 text-white/55">
           <a href="/#features" className="hover:text-white transition-colors">Features</a>
           <a href="/#pricing" className="hover:text-white transition-colors">Pricing</a>
