@@ -547,10 +547,10 @@ export default function InteractiveStudio() {
           </div>
         </div>
 
-        {/* Scheduled chip */}
+        {/* Export-ready chip */}
         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 panel-strong rounded-full px-3.5 py-2 flex items-center gap-2 text-[11px] text-white/70 whitespace-nowrap shadow-xl">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          Auto-publishing · Tomorrow 9:00 AM
+          Ready to export · ZIP &amp; PDF
         </div>
       </div>
     </div>

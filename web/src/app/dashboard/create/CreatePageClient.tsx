@@ -210,9 +210,9 @@ export default function CreatePageClient({ planKey, limits, postsThisMonth, pref
         )}
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
         {/* ── Left: controls + progress — form appears below preview on mobile ── */}
-        <div className="space-y-4 order-2 lg:order-1">
+        <div className="min-w-0 space-y-4 order-2 lg:order-1">
           <QuickStarts currentTopic={design.topic} disabled={isGenerating} />
 
           <div className="glass rounded-2xl p-5">
@@ -330,7 +330,7 @@ export default function CreatePageClient({ planKey, limits, postsThisMonth, pref
         </div>
 
         {/* ── Right: live preview → result — shown first on mobile ── */}
-        <div className="space-y-4 lg:sticky lg:top-6 self-start order-1 lg:order-2">
+        <div className="min-w-0 space-y-4 lg:sticky lg:top-6 self-start order-1 lg:order-2">
           <AnimatePresence mode="wait">
             {showResult ? (
               <motion.div

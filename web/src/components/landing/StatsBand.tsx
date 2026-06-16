@@ -14,7 +14,7 @@ type Stat = {
 const STATS: Stat[] = [
   { to: 60, prefix: "<", suffix: "s", label: "topic → finished carousel" },
   { to: 13, label: "copy languages" },
-  { to: null, display: "24/7", label: "scheduled auto-publishing" },
+  { to: null, display: "ZIP/PDF", label: "one-click export" },
   { to: 100, suffix: "%", label: "on-brand, every time" },
 ];
 

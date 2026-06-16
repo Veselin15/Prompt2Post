@@ -351,7 +351,7 @@ export default function BillingClient({
             <tbody className="divide-y divide-white/[0.04]">
               {(
                 [
-                  { label: "Posts / month",       free: "10",       pro: "100",     creator: "Unlimited" },
+                  { label: "Posts / month",       free: "3",        pro: "100",     creator: "Unlimited" },
                   { label: "Max slides",           free: "3",        pro: "10",      creator: "10"        },
                   { label: "Formats",              free: "2",        pro: "All 4",   creator: "All 4"     },
                   { label: "Templates",            free: "Classic",  pro: "All 4",   creator: "All 4"     },

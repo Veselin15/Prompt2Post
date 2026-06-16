@@ -33,7 +33,7 @@ const PLANS: Plan[] = [
     features: [
       "100 posts / month",
       "Up to 10 slides",
-      "Post directly to Instagram",
+      "Instagram publishing (coming soon)",
       "All 4 formats (Story, Wide…)",
       "Custom accent & @handle watermark",
       "ZIP & PDF download",
@@ -47,8 +47,8 @@ const PLANS: Plan[] = [
     monthly: 29,
     features: [
       "Unlimited posts",
-      "Schedule & auto-publish",
-      "Content calendar",
+      "Schedule & auto-publish (coming soon)",
+      "Content calendar (coming soon)",
       "Priority parallel generation",
       "Repurpose to X & LinkedIn",
       "All Pro features",

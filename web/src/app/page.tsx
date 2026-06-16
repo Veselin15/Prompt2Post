@@ -97,7 +97,7 @@ export default function LandingPage() {
 
           <p className="text-white/60 text-lg sm:text-xl max-w-2xl mx-auto mb-9 leading-relaxed">
             Prompt2Post is the AI content studio for Instagram creators. Type an idea — it
-            plans, writes, designs, and schedules a scroll-stopping carousel. Try it right here. 👇
+            plans, writes, and designs a scroll-stopping carousel. Try it right here. 👇
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
@@ -153,7 +153,7 @@ export default function LandingPage() {
           Your whole content workflow, in one box
         </h2>
         <p className="text-white/50 text-center mb-12">
-          From blank topic to published post — without leaving the app.
+          From blank topic to ready-to-post carousel — without leaving the app.
         </p>
 
         <div className="grid sm:grid-cols-6 gap-4">
@@ -186,10 +186,15 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-xl bg-[#E4405F]/15 flex items-center justify-center mb-4">
               <Instagram className="w-5 h-5 text-[#E4405F]" />
             </div>
-            <h3 className="font-semibold mb-1.5">Publish &amp; schedule</h3>
+            <div className="flex items-center gap-2 mb-1.5">
+              <h3 className="font-semibold">Publish &amp; schedule</h3>
+              <span className="text-[10px] font-semibold uppercase tracking-wider bg-white/10 text-white/55 border border-white/15 px-1.5 py-0.5 rounded-full">
+                Coming soon
+              </span>
+            </div>
             <p className="text-white/55 text-sm leading-relaxed">
-              Post carousels straight to Instagram, or queue them on a content calendar and let them
-              publish themselves.
+              Soon you&apos;ll post carousels straight to Instagram, or queue them on a content
+              calendar and let them publish themselves.
             </p>
           </div>
 
@@ -262,7 +267,7 @@ export default function LandingPage() {
             { n: "01", icon: <Lightbulb className="w-4 h-4 text-yellow-300" />, title: "Enter your topic", desc: "Type any subject — or let the Idea Studio brainstorm six post ideas for your niche." },
             { n: "02", icon: <Sparkles className="w-4 h-4 text-brand-400" />, title: "AI plans & writes", desc: "It determines the structure, then writes creative, researched copy slide-by-slide." },
             { n: "03", icon: <Image className="w-4 h-4 text-blue-400" />, title: "Images are generated", desc: "FLUX generates visuals, your headline is composited on top — refine any slide afterwards." },
-            { n: "04", icon: <CalendarClock className="w-4 h-4 text-green-400" />, title: "Publish or schedule", desc: "Post straight to Instagram, schedule it for the perfect time, or export ZIP / PDF with captions." },
+            { n: "04", icon: <CalendarClock className="w-4 h-4 text-green-400" />, title: "Export or schedule", desc: "Export ZIP / PDF with captions today — direct Instagram publishing & scheduling are coming soon." },
           ].map((step) => (
             <div key={step.n} className="panel hover-lift rounded-2xl p-5 text-left relative overflow-hidden">
               <span className="absolute -top-3 -right-1 text-[64px] font-black text-white/[0.04] leading-none select-none">
@@ -284,7 +289,7 @@ export default function LandingPage() {
           {[
             { quote: "I batch a week of carousels in one coffee. My saves doubled.", who: "Maya · fitness creator" },
             { quote: "It nails my brand colors and tone every single time. Wild.", who: "Leo · finance page" },
-            { quote: "Scheduling means I actually post daily now. Game changer.", who: "Priya · travel blog" },
+            { quote: "Export to ZIP and I'm posting daily now. Game changer.", who: "Priya · travel blog" },
           ].map((t) => (
             <div key={t.who} className="panel rounded-2xl p-5">
               <div className="flex gap-0.5 mb-2.5 text-amber-300">
@@ -316,7 +321,7 @@ export default function LandingPage() {
               <span className="gradient-text-animated">handled.</span>
             </h2>
             <p className="text-white/55 mb-8 max-w-md mx-auto">
-              Ideas, copy, visuals, captions, scheduling — the whole pipeline, from one text box.
+              Ideas, copy, visuals, captions, export — the whole pipeline, from one text box.
             </p>
             <Link
               href="/sign-up"
