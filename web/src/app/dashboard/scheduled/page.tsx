@@ -28,7 +28,7 @@ export default async function ScheduledPage() {
     : [];
 
   return (
-    <div className="p-6 sm:p-8 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
       <div className="mb-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-brand-600/15 flex items-center justify-center">

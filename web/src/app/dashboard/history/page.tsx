@@ -42,8 +42,8 @@ export default async function HistoryPage() {
   }));
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-bold">History</h1>
           <p className="text-white/50 text-sm mt-1">

@@ -186,7 +186,7 @@ export default function CreatePageClient({ planKey, limits, postsThisMonth, inst
   const nearMonthLimit = hasMonthlyLimit && postsUsed / monthlyLimit >= 0.8;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       {/* ── Page header ── */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
@@ -212,9 +212,9 @@ export default function CreatePageClient({ planKey, limits, postsThisMonth, inst
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
-        {/* ── Left: controls + progress ── */}
-        <div className="space-y-4">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
+        {/* ── Left: controls + progress — form appears below preview on mobile ── */}
+        <div className="space-y-4 order-2 lg:order-1">
           <QuickStarts currentTopic={design.topic} disabled={isGenerating} />
 
           <div className="glass rounded-2xl p-5">
@@ -331,8 +331,8 @@ export default function CreatePageClient({ planKey, limits, postsThisMonth, inst
           )}
         </div>
 
-        {/* ── Right: live preview → result ── */}
-        <div className="space-y-4 lg:sticky lg:top-6 self-start">
+        {/* ── Right: live preview → result — shown first on mobile ── */}
+        <div className="space-y-4 lg:sticky lg:top-6 self-start order-1 lg:order-2">
           <AnimatePresence mode="wait">
             {showResult ? (
               <motion.div

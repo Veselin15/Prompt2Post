@@ -134,7 +134,7 @@ export default function BrandKitClient({ planKey, limits, initialKit }: Props) {
   }
 
   return (
-    <div className="p-6 sm:p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Brand Kit</h1>
         <p className="text-white/50 text-sm mt-1">

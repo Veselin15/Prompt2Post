@@ -51,7 +51,7 @@ export default function HistoryClient({ posts }: Props) {
     <>
       {/* ── Filter bar ── */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative flex-1 min-w-0 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
           <input
             type="text"
@@ -72,7 +72,7 @@ export default function HistoryClient({ posts }: Props) {
         </div>
 
         {presentFormats.length > 1 && (
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 flex-wrap">
             {(["all", ...presentFormats] as const).map((f) => (
               <button
                 key={f}
