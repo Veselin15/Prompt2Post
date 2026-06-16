@@ -18,10 +18,17 @@ export async function POST(req: NextRequest) {
   }
 
   const base = getAppBaseUrl(req);
-  const url = await createPortalSession({
-    customerId: dbUser.stripe_customer_id,
-    returnUrl: `${base}/dashboard/billing`,
-  });
+  let url: string;
+  try {
+    url = await createPortalSession({
+      customerId: dbUser.stripe_customer_id,
+      returnUrl: `${base}/dashboard/billing`,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Stripe error";
+    console.error("[portal] createPortalSession failed:", msg);
+    return NextResponse.json({ error: msg }, { status: 502 });
+  }
 
   return NextResponse.json({ url });
 }

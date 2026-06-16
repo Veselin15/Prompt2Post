@@ -65,13 +65,20 @@ export async function POST(req: NextRequest) {
   }
 
   const base = getAppBaseUrl(req);
-  const checkoutUrl = await createCheckoutSession({
-    customerId,
-    priceId,
-    userId,
-    successUrl: `${base}/dashboard/billing?success=1`,
-    cancelUrl: `${base}/dashboard/billing?canceled=1`,
-  });
+  let checkoutUrl: string;
+  try {
+    checkoutUrl = await createCheckoutSession({
+      customerId,
+      priceId,
+      userId,
+      successUrl: `${base}/dashboard/billing?success=1`,
+      cancelUrl: `${base}/dashboard/billing?canceled=1`,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Stripe error";
+    console.error("[checkout] createCheckoutSession failed:", msg);
+    return NextResponse.json({ error: msg }, { status: 502 });
+  }
 
   return NextResponse.json({ url: checkoutUrl });
 }
