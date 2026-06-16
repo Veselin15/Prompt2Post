@@ -80,8 +80,6 @@ export default async function CreatePage({
       planKey={planKey}
       limits={PLAN_LIMITS[planKey]}
       postsThisMonth={dbUser.posts_this_month}
-      instagramConnected={!!dbUser.instagram_user_id}
-      instagramUsername={dbUser.instagram_username}
       prefill={prefill}
     />
   );

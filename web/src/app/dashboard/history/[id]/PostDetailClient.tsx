@@ -39,19 +39,9 @@ function templateHref(post: Post): string {
 
 interface Props {
   post: Post;
-  canPostToInstagram: boolean;
-  instagramConnected: boolean;
-  instagramUsername: string | null;
-  canScheduleInstagram: boolean;
 }
 
-export default function PostDetailClient({
-  post,
-  canPostToInstagram,
-  instagramConnected,
-  instagramUsername,
-  canScheduleInstagram,
-}: Props) {
+export default function PostDetailClient({ post }: Props) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -246,10 +236,6 @@ export default function PostDetailClient({
           content={post.content}
           post={post}
           hasZip={!!post.zip_url}
-          canPostToInstagram={canPostToInstagram}
-          instagramConnected={instagramConnected}
-          instagramUsername={instagramUsername}
-          canScheduleInstagram={canScheduleInstagram}
         />
       </div>
     </div>

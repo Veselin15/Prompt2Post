@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Check, X, Zap, Crown, Sparkles, ExternalLink, Lock, Instagram, Loader2 } from "lucide-react";
+import { Check, X, Zap, Crown, Sparkles, ExternalLink, Lock } from "lucide-react";
 import { PLAN_LIMITS } from "@/types";
 import type { Plan } from "@/types";
 import { clsx } from "clsx";
@@ -50,6 +50,7 @@ const PLANS: PlanDef[] = [
       "Custom accent color",
       "@handle watermark",
       "ZIP download",
+      "Priority generation queue",
     ],
     cta: null,
     color: "border-white/10",
@@ -73,11 +74,8 @@ const PLANS: PlanDef[] = [
       "@handle watermark on every image",
       "ZIP download of all slides",
       "30-day post history",
-      "Direct Instagram posting",
     ],
     locked: [
-      "Priority generation queue",
-      "Instagram post scheduling",
     ],
     cta: "Upgrade to Pro",
     color: "border-brand-500/40",
@@ -101,8 +99,6 @@ const PLANS: PlanDef[] = [
       "ZIP download",
       "Priority generation queue",
       "Unlimited post history",
-      "Direct Instagram posting",
-      "Instagram scheduling (coming soon)",
       "API access (coming soon)",
     ],
     locked: [],
@@ -149,15 +145,6 @@ function SearchParamToasts() {
       toast.info("Checkout canceled.");
       router.replace("/dashboard/billing");
     }
-    const ig = searchParams.get("instagram");
-    if (ig === "connected") {
-      toast.success("Instagram account connected successfully!");
-    } else if (ig === "denied") {
-      toast.info("Instagram connection cancelled.");
-    } else if (ig === "error") {
-      const msg = searchParams.get("msg") ?? "Instagram connection failed.";
-      toast.error(decodeURIComponent(msg));
-    }
   }, [searchParams, router]);
   return null;
 }
@@ -166,21 +153,12 @@ export default function BillingClient({
   currentPlan,
   stripeEnabled = false,
   hasStripeCustomer = false,
-  instagramConnected = false,
-  instagramUsername = null,
-  instagramConfigured = false,
 }: {
   currentPlan: Plan;
   stripeEnabled?: boolean;
   hasStripeCustomer?: boolean;
-  instagramConnected?: boolean;
-  instagramUsername?: string | null;
-  instagramConfigured?: boolean;
 }) {
   const [loading, setLoading]             = useState<string | null>(null);
-  const [igLoading, setIgLoading]         = useState(false);
-  const [igConnected, setIgConnected]     = useState(instagramConnected);
-  const [igUsername, setIgUsername]       = useState(instagramUsername);
   const router = useRouter();
 
   // Recover plan when checkout succeeded but webhook/sync lagged.
@@ -221,21 +199,6 @@ export default function BillingClient({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to open checkout");
       setLoading(null);
-    }
-  }
-
-  async function handleInstagramDisconnect() {
-    setIgLoading(true);
-    try {
-      const res = await fetch("/api/instagram/disconnect", { method: "DELETE" });
-      if (!res.ok) throw new Error("Disconnect failed");
-      setIgConnected(false);
-      setIgUsername(null);
-      toast.success("Instagram account disconnected.");
-    } catch {
-      toast.error("Failed to disconnect. Please try again.");
-    } finally {
-      setIgLoading(false);
     }
   }
 
@@ -399,8 +362,6 @@ export default function BillingClient({
                   { label: "ZIP download",         free: false,      pro: true,      creator: true        },
                   { label: "Priority queue",       free: false,      pro: false,     creator: true        },
                   { label: "Post history",         free: "7 days",   pro: "30 days", creator: "Unlimited" },
-                  { label: "Instagram posting",    free: false,      pro: true,      creator: true        },
-                  { label: "Instagram scheduling", free: false,      pro: false,     creator: "Soon"      },
                   { label: "API access",           free: false,      pro: false,     creator: "Soon"      },
                 ] as const
               ).map((row) => (
@@ -433,78 +394,6 @@ export default function BillingClient({
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* ── Connected Accounts ── */}
-      <div className="glass rounded-2xl p-5 mb-6 border border-white/[0.06]">
-        <h2 className="font-semibold text-sm mb-4">Connected Accounts</h2>
-
-        <div className="flex items-center justify-between gap-4">
-          {/* Left: branding + status */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#E4405F]/20 to-[#f77737]/20 border border-[#E4405F]/20 shrink-0">
-              <Instagram className="w-5 h-5 text-[#E4405F]" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Instagram</p>
-              {igConnected && igUsername ? (
-                <p className="text-xs text-white/40 mt-0.5">
-                  Connected as <span className="text-white/60">@{igUsername}</span>
-                </p>
-              ) : (
-                <p className="text-xs text-white/30 mt-0.5">
-                  {!PLAN_LIMITS[currentPlan].instagram_posting
-                    ? "Requires Pro or Creator plan"
-                    : "Not connected"}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Right: action */}
-          {igConnected ? (
-            <button
-              onClick={handleInstagramDisconnect}
-              disabled={igLoading}
-              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-red-400 border border-white/10 hover:border-red-400/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
-            >
-              {igLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              {igLoading ? "Disconnecting…" : "Disconnect"}
-            </button>
-          ) : PLAN_LIMITS[currentPlan].instagram_posting ? (
-            !instagramConfigured ? (
-              <span className="text-xs text-white/25 italic">
-                Not configured by admin
-              </span>
-            ) : (
-              <a
-                href="/api/instagram/connect?return_to=/dashboard/billing"
-                className="flex items-center gap-1.5 text-xs font-medium bg-[#E4405F]/15 hover:bg-[#E4405F]/25 border border-[#E4405F]/30 text-[#E4405F] px-3 py-1.5 rounded-lg transition-colors"
-              >
-                <Instagram className="w-3.5 h-3.5" />
-                Connect
-              </a>
-            )
-          ) : (
-            <a
-              href="/dashboard/billing"
-              className="flex items-center gap-1 text-xs text-white/25 hover:text-white/40 transition-colors"
-            >
-              <Lock className="w-3 h-3" />
-              Upgrade to unlock
-            </a>
-          )}
-        </div>
-
-        {/* Explainer */}
-        <p className="text-[11px] text-white/25 mt-4 leading-relaxed">
-          Instagram posting requires a <strong className="text-white/40">Business or Creator</strong> account
-          linked to a Facebook Page. After connecting, use the{" "}
-          <span className="text-white/40">Post to Instagram</span> button in the Create page to publish directly.
-          {PLAN_LIMITS[currentPlan].instagram_scheduling && (
-            <> <span className="text-yellow-400/60">Post scheduling</span> is coming soon for Creator plans.</>
-          )}
-        </p>
       </div>
 
       {/* ── Billing portal ── */}

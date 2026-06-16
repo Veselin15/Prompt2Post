@@ -11,7 +11,6 @@ import {
   CreditCard,
   LayoutDashboard,
   Lightbulb,
-  CalendarClock,
   Menu,
   X,
   Search,
@@ -28,7 +27,6 @@ const NAV = [
   { href: "/dashboard/ideas", label: "Ideas", icon: Lightbulb },
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/history", label: "History", icon: Clock },
-  { href: "/dashboard/scheduled", label: "Scheduled", icon: CalendarClock },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
 

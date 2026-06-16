@@ -27,12 +27,6 @@ export default async function PostDetailPage({
   const limits  = PLAN_LIMITS[planKey];
 
   return (
-    <PostDetailClient
-      post={post}
-      canPostToInstagram={limits.instagram_posting}
-      instagramConnected={!!dbUser.instagram_user_id}
-      instagramUsername={dbUser.instagram_username}
-      canScheduleInstagram={limits.instagram_scheduling}
-    />
+    <PostDetailClient post={post} />
   );
 }

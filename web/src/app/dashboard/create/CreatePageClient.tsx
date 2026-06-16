@@ -19,8 +19,6 @@ interface Props {
   planKey: Plan;
   limits: PlanLimits;
   postsThisMonth: number;
-  instagramConnected: boolean;
-  instagramUsername: string | null;
   prefill?: FormPrefill;
 }
 
@@ -48,7 +46,7 @@ const STAGES = [
   { key: "done",   label: "Done",   from: 100 },
 ];
 
-export default function CreatePageClient({ planKey, limits, postsThisMonth, instagramConnected, instagramUsername, prefill }: Props) {
+export default function CreatePageClient({ planKey, limits, postsThisMonth, prefill }: Props) {
   const [isGenerating, setIsGenerating]               = useState(false);
   const [progress, setProgress]                       = useState<Progress | null>(null);
   const [structure, setStructure]                     = useState<PostStructure | null>(null);
@@ -383,10 +381,6 @@ export default function CreatePageClient({ planKey, limits, postsThisMonth, inst
                   content={content}
                   post={post}
                   hasZip={limits.zip_download}
-                  canPostToInstagram={limits.instagram_posting}
-                  instagramConnected={instagramConnected}
-                  instagramUsername={instagramUsername}
-                  canScheduleInstagram={limits.instagram_scheduling}
                 />
               </motion.div>
             )}

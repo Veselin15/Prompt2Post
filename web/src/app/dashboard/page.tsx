@@ -1,9 +1,8 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getPostsByUser, getUserPostStats, countQueuedScheduled, getDailyPostCounts } from "@/lib/db";
+import { getPostsByUser, getUserPostStats, getDailyPostCounts } from "@/lib/db";
 import { ensureDbUser } from "@/lib/ensure-user";
-import { publishDueScheduledPosts } from "@/lib/scheduler";
 import { PLAN_LIMITS, POST_FORMATS, resolveFormat } from "@/types";
 import CountUp from "@/components/dashboard/CountUp";
 import {
@@ -13,7 +12,6 @@ import {
   Zap,
   CreditCard,
   Lightbulb,
-  CalendarClock,
   Layers,
   Image as ImageIcon,
   CheckCircle2,
@@ -35,15 +33,9 @@ export default async function DashboardOverview() {
 
   const limits = PLAN_LIMITS[dbUser.plan];
 
-  // Opportunistic publish of any due scheduled posts (local-dev cron fallback).
-  if (limits.instagram_scheduling) {
-    await publishDueScheduledPosts(userId).catch(() => {});
-  }
-
-  const [recentPosts, stats, queuedCount, activity] = await Promise.all([
+  const [recentPosts, stats, activity] = await Promise.all([
     getPostsByUser(userId, 4),
     getUserPostStats(userId),
-    countQueuedScheduled(userId),
     getDailyPostCounts(userId, 14),
   ]);
 
@@ -75,11 +67,6 @@ export default async function DashboardOverview() {
       label: "Slides generated",
       value: stats.total_slides,
     },
-    {
-      icon: <CalendarClock className="w-4 h-4 text-green-400" />,
-      label: "Scheduled",
-      value: queuedCount,
-    },
   ];
 
   // ── Onboarding checklist — built from real account state ──
@@ -96,22 +83,6 @@ export default async function DashboardOverview() {
       done: !!dbUser.brand_kit,
       href: "/dashboard/brand-kit",
     },
-    ...(limits.instagram_posting
-      ? [{
-          label: "Connect Instagram",
-          desc: "Publish carousels without leaving the app",
-          done: !!dbUser.instagram_user_id,
-          href: "/dashboard/scheduled",
-        }]
-      : []),
-    ...(limits.instagram_scheduling
-      ? [{
-          label: "Schedule a post",
-          desc: "Queue it — it publishes itself",
-          done: queuedCount > 0,
-          href: "/dashboard/create",
-        }]
-      : []),
   ];
   const checklistDone = checklist.filter((c) => c.done).length;
   const showChecklist = checklistDone < checklist.length;

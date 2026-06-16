@@ -300,9 +300,6 @@ export const PLAN_LIMITS: Record<Plan, {
   watermark: boolean;               // @handle watermark on images
   custom_accent: boolean;           // full colour-picker (vs preset swatches only)
   history_days: number;             // post history retention (-1 = unlimited)
-  // Instagram integration
-  instagram_posting: boolean;       // direct publish to Instagram
-  instagram_scheduling: boolean;    // schedule posts for later (Creator only)
 }> = {
   free: {
     posts_per_month: 10,
@@ -318,8 +315,6 @@ export const PLAN_LIMITS: Record<Plan, {
     watermark: false,
     custom_accent: false,
     history_days: 7,
-    instagram_posting: false,
-    instagram_scheduling: false,
   },
   pro: {
     posts_per_month: 100,
@@ -335,8 +330,6 @@ export const PLAN_LIMITS: Record<Plan, {
     watermark: true,
     custom_accent: true,
     history_days: 30,
-    instagram_posting: true,
-    instagram_scheduling: false,
   },
   creator: {
     posts_per_month: Infinity,
@@ -352,8 +345,6 @@ export const PLAN_LIMITS: Record<Plan, {
     watermark: true,
     custom_accent: true,
     history_days: -1,
-    instagram_posting: true,
-    instagram_scheduling: true,
   },
 };
 
