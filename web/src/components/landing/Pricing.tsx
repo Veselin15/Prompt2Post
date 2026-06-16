@@ -18,7 +18,7 @@ const PLANS: Plan[] = [
     name: "Free",
     monthly: 0,
     features: [
-      "10 posts / month",
+      "3 posts / month",
       "Up to 3 slides",
       "Idea Studio & AI rewrites",
       "Square & Portrait formats",

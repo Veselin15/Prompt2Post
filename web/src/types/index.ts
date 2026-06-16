@@ -302,7 +302,7 @@ export const PLAN_LIMITS: Record<Plan, {
   history_days: number;             // post history retention (-1 = unlimited)
 }> = {
   free: {
-    posts_per_month: 10,
+    posts_per_month: 3,
     max_slides: 3,
     zip_download: false,
     priority: false,

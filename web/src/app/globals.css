@@ -46,14 +46,19 @@
     @apply bg-brand-500/40 text-white;
   }
 
-  ::-webkit-scrollbar {
-    @apply w-1.5;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-white/5;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-white/20 hover:bg-white/30;
+  /* Custom scrollbar only on desktop — defining ::-webkit-scrollbar on mobile
+     Chrome disables overlay scrollbars and steals 6 px from the layout,
+     causing content to be clipped by overflow-x-hidden in the dashboard. */
+  @media (hover: hover) and (pointer: fine) {
+    ::-webkit-scrollbar {
+      @apply w-1.5;
+    }
+    ::-webkit-scrollbar-track {
+      @apply bg-white/5;
+    }
+    ::-webkit-scrollbar-thumb {
+      @apply rounded-full bg-white/20 hover:bg-white/30;
+    }
   }
 
   :focus-visible {
