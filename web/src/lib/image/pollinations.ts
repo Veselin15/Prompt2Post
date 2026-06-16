@@ -77,23 +77,39 @@ export function buildImageUrl(
   return `${BASE}/${encoded}?model=${encodeURIComponent(model)}&width=${width}&height=${height}&nologo=true&enhance=${enhance}&private=true&seed=${seed}${keyParam}`;
 }
 
+// Per-attempt timeouts (ms) — increase on each retry so slow responses
+// get a fair chance without blocking indefinitely.
+const ATTEMPT_TIMEOUTS = [35_000, 45_000, 55_000, 60_000, 65_000];
+// Delays between retries (ms).
+const RETRY_DELAYS     = [0, 3_000, 6_000, 10_000, 15_000];
+
 export async function fetchImageBuffer(
   prompt: string,
   opts: ImageOptions,
   seed: number,
-  retries = 3
+  retries = 5
 ): Promise<Buffer> {
-  const url = buildImageUrl(prompt, opts, seed);
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < retries; attempt++) {
-    if (attempt > 0) await sleep(2000 * attempt);
+    if (attempt > 0) await sleep(RETRY_DELAYS[attempt] ?? 10_000);
+
+    // Vary the seed on retries so we're not re-requesting the exact same
+    // (potentially cached-as-bad) image from the provider.
+    const attemptSeed = attempt === 0 ? seed : seed * 31 + attempt * 1_000_003;
+    const url = buildImageUrl(prompt, opts, attemptSeed);
+
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(new Error("Fetch timeout")),
+      ATTEMPT_TIMEOUTS[attempt] ?? 60_000
+    );
+
     try {
-      const res = await fetch(url);
-      if (res.status === 401 || res.status === 402) {
-        // Balance exhausted — use fallback immediately
-        break;
-      }
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+
+      if (res.status === 401 || res.status === 402) break; // balance exhausted
       if (!res.ok) {
         lastError = new Error(`HTTP ${res.status}`);
         continue;
@@ -104,19 +120,23 @@ export async function fetchImageBuffer(
         continue;
       }
       const ab = await res.arrayBuffer();
-      // Reject stub/error images — a real photo is always well above 20 KB
+      // Real photos are well above 20 KB; reject stub/error images.
       if (ab.byteLength < 20_000) {
-        lastError = new Error(`Response too small (${ab.byteLength} bytes) — likely a stub image`);
+        lastError = new Error(`Response too small (${ab.byteLength} bytes) — likely a stub`);
         continue;
       }
       return Buffer.from(ab);
     } catch (err) {
+      clearTimeout(timer);
       lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[pollinations] attempt ${attempt + 1}/${retries} failed: ${lastError.message}`);
     }
   }
 
-  // Fallback: return a placeholder gradient buffer (SVG → PNG via Sharp)
-  console.warn(`Pollinations unavailable (${lastError?.message}), using gradient placeholder`);
+  // All attempts exhausted — fall back to a gradient placeholder so generation
+  // never hard-fails. The compositor warning in the final output makes it
+  // clear which slides used the fallback.
+  console.warn(`[pollinations] all ${retries} attempts failed (${lastError?.message}), using gradient placeholder`);
   return generateGradientBuffer(opts.style, seed, opts.width ?? 1080, opts.height ?? 1080);
 }
 
