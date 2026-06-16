@@ -1,20 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
 import { clsx } from "clsx";
 
 interface BrandLogoProps {
   className?: string;
-  iconClassName?: string;
-  textClassName?: string;
+  /** When true, renders only the icon mark without the wordmark. */
+  iconOnly?: boolean;
+  height?: number;
 }
 
 export default function BrandLogo({
   className,
-  iconClassName = "w-5 h-5",
-  textClassName = "gradient-text",
+  iconOnly = false,
+  height = 32,
 }: BrandLogoProps) {
   const pathname = usePathname();
 
@@ -29,11 +30,29 @@ export default function BrandLogo({
     <Link
       href="/"
       onClick={handleClick}
-      className={clsx("flex items-center gap-2 font-bold", className)}
+      className={clsx("flex items-center", className)}
       aria-label="Prompt2Post home"
     >
-      <Sparkles className={clsx(iconClassName, "text-brand-400 shrink-0")} />
-      <span className={textClassName}>Prompt2Post</span>
+      {iconOnly ? (
+        <Image
+          src="/logo.png"
+          alt="Prompt2Post"
+          height={height}
+          width={height}
+          className="shrink-0"
+          priority
+        />
+      ) : (
+        <Image
+          src="/logo_text.png"
+          alt="Prompt2Post"
+          height={height}
+          width={0}
+          style={{ width: "auto" }}
+          className="shrink-0"
+          priority
+        />
+      )}
     </Link>
   );
 }

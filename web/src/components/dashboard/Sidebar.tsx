@@ -102,7 +102,7 @@ export default function Sidebar() {
       {/* ── Desktop sidebar ── */}
       <aside className="hidden md:flex flex-col h-full w-60 glass border-r border-white/10 shrink-0">
         <div className="px-5 py-5 border-b border-white/10">
-          <BrandLogo textClassName="font-bold text-base gradient-text" />
+          <BrandLogo />
         </div>
         <div className="px-3 pt-3">
           <button
