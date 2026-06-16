@@ -11,17 +11,20 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: "#f0f0ff",
-          100: "#e4e3ff",
-          200: "#cccbff",
-          300: "#a9a4ff",
-          400: "#8176fc",
-          500: "#6750f8",
-          600: "#5530ef",
-          700: "#4820d5",
-          800: "#3c1dac",
-          900: "#341b88",
+          50:  "#f4efff",
+          100: "#e9e0ff",
+          200: "#d4bfff",
+          300: "#b48ef8",
+          400: "#9A5EEE",
+          500: "#8B3EDE",
+          600: "#7B26CE",
+          700: "#6A16BE",
+          800: "#5A0EA8",
+          900: "#490A8C",
         },
+        /* Logo accent colours — available as text-logo-blue / bg-logo-orange etc. */
+        "logo-blue":   "#1B75B8",
+        "logo-orange": "#F07030",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
