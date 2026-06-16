@@ -40,9 +40,17 @@ export default function BrandLogo({
         className="shrink-0"
         priority
       />
-      <span className={clsx("font-bold leading-none text-lg", textClassName)}>
-        <span style={{ color: "#1B75B8" }}>Prompt2</span>
-        <span style={{ color: "#F07030" }}>Post</span>
+      <span
+        className={clsx("font-bold leading-none text-lg", textClassName)}
+        style={{
+          background: "linear-gradient(to right, #1B75B8 0%, #8B3EDE 50%, #F07030 100%)",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          color: "transparent",
+        }}
+      >
+        Prompt2Post
       </span>
     </Link>
   );
