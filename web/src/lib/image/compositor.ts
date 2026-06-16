@@ -146,26 +146,25 @@ function renderOverlay(input: RenderInput): string {
   else topY = H - Math.round(H * 0.075) - handleReserve - blockH;
 
   // ── Backing treatment ──────────────────────────────────────────────────
-  // For detailed text, deepen the scrim so body lines stay legible
-  const scrimDepth = textAmount === "detailed" ? 0.92 : 0.86;
-  const scrimPad   = textAmount === "detailed" ? Math.round(140 * scale) : Math.round(120 * scale);
+  const scrimDepth = textAmount === "detailed" ? 0.72 : 0.62;
+  const scrimPad   = textAmount === "detailed" ? Math.round(180 * scale) : Math.round(150 * scale);
 
   const defs: string[] = [];
   let backing = "";
   if (template === "classic" || isQuote) {
     const bandTop = Math.max(0, topY - Math.round(60 * scale));
     if (position === "center" || isQuote) {
-      const centerOpacity = textAmount === "detailed" ? 0.80 : 0.72;
+      const centerOpacity = textAmount === "detailed" ? 0.60 : 0.50;
       const bandH = Math.min(H, topY + blockH + Math.round(80 * scale)) - bandTop;
       defs.push(`<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#000" stop-opacity="0"/>
-        <stop offset="22%" stop-color="#000" stop-opacity="${centerOpacity}"/>
-        <stop offset="78%" stop-color="#000" stop-opacity="${centerOpacity}"/>
+        <stop offset="18%" stop-color="#000" stop-opacity="${centerOpacity}"/>
+        <stop offset="82%" stop-color="#000" stop-opacity="${centerOpacity}"/>
         <stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>`);
       backing = `<rect x="0" y="${bandTop}" width="${W}" height="${bandH}" fill="url(#g)"/>`;
     } else if (position === "top") {
       defs.push(`<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000" stop-opacity="0.85"/>
+        <stop offset="0%" stop-color="#000" stop-opacity="0.65"/>
         <stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>`);
       backing = `<rect x="0" y="0" width="${W}" height="${topY + blockH + Math.round(80 * scale)}" fill="url(#g)"/>`;
     } else {
@@ -183,20 +182,20 @@ function renderOverlay(input: RenderInput): string {
     const cardH = blockH + cardPad * 2;
     const r = Math.round(28 * scale);
     backing =
-      `<rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="${r}" fill="#0b0a14" opacity="0.82"/>` +
+      `<rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="${r}" fill="#0b0a14" opacity="0.78"/>` +
       `<rect x="${cardX}" y="${cardY}" width="${Math.round(10 * scale)}" height="${cardH}" rx="${Math.round(5 * scale)}" fill="${accent}"/>`;
   } else {
     // minimal – soft vignette only, legibility comes from text shadows
     defs.push(`<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#000" stop-opacity="${position === "top" ? 0.5 : 0}"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="${position === "top" ? 0 : 0.5}"/></linearGradient>`);
+      <stop offset="0%" stop-color="#000" stop-opacity="${position === "top" ? 0.38 : 0}"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="${position === "top" ? 0 : 0.38}"/></linearGradient>`);
     backing = `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#g)"/>`;
   }
 
   // ── Text ───────────────────────────────────────────────────────────────
   const els: string[] = [];
   let y = topY;
-  const headlineShadow = template === "minimal" ? Math.round(3 * scale) : Math.round(2 * scale);
+  const headlineShadow = template === "minimal" ? Math.round(4 * scale) : Math.round(3 * scale);
 
   if (isQuote) {
     const qSize = Math.round(150 * scale);
@@ -226,8 +225,8 @@ function renderOverlay(input: RenderInput): string {
     y += gapBody;
     for (const line of bodyLines) {
       els.push(emit(SB, line, bodyMax, y + capHeight(SB, bodyMax), "#ffffff", {
-        opacity: 0.92,
-        shadow: Math.round(1.5 * scale),
+        opacity: 0.95,
+        shadow: Math.round(2.5 * scale),
       }));
       y += bodyLead;
     }
