@@ -58,7 +58,7 @@ Respond with valid JSON only — no markdown, no commentary.
 
 Rules:
   • Facts must be real and checkable — the kind a knowledgeable expert would confirm. Always prefer the surprising-but-true over the safe-and-generic. If you are unsure of an exact number, give a faithful realistic range, never a fabricated precise figure.
-  • The "arc" array length MUST equal the requested slide count.
+  • The "arc" array length MUST equal the requested slide count. Beat 1 is the COVER beat — the title angle plus a curiosity hook, carrying NO facts; beats 2…N are the content beats that deploy the actual facts. (For a 1-slide post there is no separate cover beat.)
   • "hero_subjects" must be physical, filmable things — objects, tools, places, materials, or people-in-context. NEVER abstract nouns like "success", "growth", or "innovation".
   • Make the brief specific to THIS topic and its real domain — never a reusable template.
   • Respect the requested tone, style and palette: the visual_world must fit the given color palette.`;
@@ -86,6 +86,11 @@ Respond with valid JSON only — no markdown, no commentary.
   }]
 }
 
+SLIDE ROLES (this defines the carousel structure — follow exactly):
+  • Slide 1 is the COVER — a title card, NOT a content slide. headline = the post's title / big idea, rendered HUGE. body = ONE short hook/subtitle line (≤ 10 words) that sparks curiosity and promises the payoff — a teaser, NEVER a fact, stat, step, or tip. kicker = "". The cover's only job is to earn the swipe; ALL substance lives on later slides. This single hook line is shown even when TEXT AMOUNT is minimal.
+  • Slides 2 through N are CONTENT — each delivers ONE real, specific payload (a fact, step, tip, stat, or named detail) and follows the TEXT AMOUNT rule below exactly.
+  • EXCEPTION — a 1-slide post (N=1) has NO separate cover: write that single slide as a complete standalone post.
+
 VOICE:
   • Write like a sharp, well-read human — not a brand account. Vary sentence length: pair a 2-word punch with a longer reveal.
   • Concrete beats abstract every time. Show the number, name the thing, cite the mechanism.
@@ -110,7 +115,7 @@ IMAGE PROMPTS — you are the art director (20-40 words each):
   • Only describe illustration/graphic art when the chosen style explicitly calls for it (e.g. flat). Otherwise default to photographic realism.
   • NEVER put text, letters, numbers, words, captions, logos, signage, screens, or UI in the scene — the design layer adds all text afterward.
 
-ARC: slide 1 = the hook (lead with the single biggest surprise), middle = escalating depth using the strongest facts, final slide = a memorable closer or one clean CTA.`;
+ARC: slide 1 = the COVER (title + curiosity hook, no facts), slides 2…N = escalating depth using the strongest facts, final slide = a memorable closer or one clean CTA. (For a 1-slide post, that single slide leads with the biggest surprise.)`;
 
 export function plannerUserPrompt(
   topic: string,
@@ -191,13 +196,17 @@ export function writerUserPrompt(
     ? `\nLANGUAGE (mandatory): write ALL user-facing copy — kickers, headlines, body, hook, social_caption, hashtags — in ${language}. Keep "image_prompt" fields in English (they feed an image model).\n`
     : "";
   const briefSection = brief ? `\n${briefBlock(brief)}\n` : "";
+  const structureRule =
+    numSlides > 1
+      ? `Slide 1 is the COVER (title headline + one short curiosity hook line, NO facts); slides 2-${numSlides} carry the real content (one specific fact/step/tip each); slide ${numSlides} lands a memorable closer or CTA.`
+      : `This single slide is a complete standalone post — lead with the biggest surprise.`;
   return `TOPIC: ${topic}
 Tone: ${tone} | Style: ${style} | Type: ${postType} | Slides: ${numSlides} | Palette: ${colorMood}
 ${languageRule}${briefSection}
-TEXT AMOUNT (mandatory):
+TEXT AMOUNT (mandatory, applies to CONTENT slides):
 ${amountGuide}
 
-Write all ${numSlides} slides. Lead with real, specific facts — never vague claims. Every image_prompt must use the "${colorMood}" palette and stay inside ONE consistent visual world. Hook on slide 1, strong closer on slide ${numSlides}.`;
+Write all ${numSlides} slides. ${structureRule} Use real, specific facts on the content slides — never vague claims. Every image_prompt must use the "${colorMood}" palette and stay inside ONE consistent visual world.`;
 }
 
 // ── Idea Studio — niche → ready-to-generate content ideas ─────────────────────────

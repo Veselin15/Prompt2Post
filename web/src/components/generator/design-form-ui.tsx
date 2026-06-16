@@ -11,7 +11,7 @@ import {
 
 export const TONES = ["auto", "inspirational", "educational", "funny", "dramatic", "professional", "promotional"];
 export const STYLES = ["auto", "cinematic", "vibrant", "minimalist", "neon", "vintage", "dreamy", "flat", "bold"];
-export const SLIDE_COUNTS = [1, 3, 5, 7, 10];
+export const SLIDE_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 export const FORMAT_OPTIONS: ("auto" | PostFormat)[] = ["auto", "portrait", "square", "story", "wide"];
 export const AMOUNT_OPTIONS: TextAmount[] = ["minimal", "balanced", "detailed"];
 export const FONT_OPTIONS = ["modern", "editorial"] as const;
