@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Search,
+  HelpCircle,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -89,6 +90,15 @@ export default function Sidebar() {
           />
           <div className="absolute top-14 left-0 bottom-0 w-64 bg-[#0e0e16] border-r border-white/10 flex flex-col animate-fade-in">
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
+            <div className="px-3 pb-2">
+              <a
+                href="mailto:support@prompt2post.app"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/6 transition-colors"
+              >
+                <HelpCircle className="w-4 h-4 shrink-0" />
+                Support
+              </a>
+            </div>
             <div className="p-4 border-t border-white/10 flex items-center gap-3">
               <UserButton appearance={{ variables: { colorPrimary: "#8B3EDE" } }} />
               <span className="text-xs text-white/40">Account</span>
@@ -115,6 +125,15 @@ export default function Sidebar() {
           </button>
         </div>
         <NavLinks pathname={pathname} />
+        <div className="px-3 pb-2">
+          <a
+            href="mailto:support@prompt2post.app"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/6 transition-colors"
+          >
+            <HelpCircle className="w-4 h-4 shrink-0" />
+            Support
+          </a>
+        </div>
         <div className="p-4 border-t border-white/10 flex items-center gap-3">
           <UserButton appearance={{ variables: { colorPrimary: "#6750f8" } }} />
           <span className="text-xs text-white/40">Account</span>

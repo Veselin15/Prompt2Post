@@ -7,12 +7,12 @@ import {
   Lightbulb,
   LayoutDashboard,
   Clock,
-  CalendarClock,
   CreditCard,
   Search,
   CornerDownLeft,
   Home,
   Bookmark,
+  HelpCircle,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -67,14 +67,6 @@ const COMMANDS: Command[] = [
     keywords: "history posts past previous archive",
   },
   {
-    id: "scheduled",
-    label: "Scheduled posts",
-    hint: "Your publishing queue & calendar",
-    href: "/dashboard/scheduled",
-    icon: <CalendarClock className="w-4 h-4 text-green-400" />,
-    keywords: "scheduled queue calendar publish",
-  },
-  {
     id: "billing",
     label: "Billing & plan",
     hint: "Manage your subscription",
@@ -89,6 +81,14 @@ const COMMANDS: Command[] = [
     href: "/",
     icon: <Home className="w-4 h-4 text-white/40" />,
     keywords: "landing home marketing site",
+  },
+  {
+    id: "support",
+    label: "Contact support",
+    hint: "support@prompt2post.app",
+    href: "mailto:support@prompt2post.app",
+    icon: <HelpCircle className="w-4 h-4 text-emerald-400" />,
+    keywords: "support help contact email",
   },
 ];
 
@@ -116,7 +116,11 @@ export default function CommandPalette() {
   const run = useCallback(
     (cmd: Command) => {
       close();
-      router.push(cmd.href);
+      if (cmd.href.startsWith("mailto:")) {
+        window.location.href = cmd.href;
+      } else {
+        router.push(cmd.href);
+      }
     },
     [close, router]
   );
