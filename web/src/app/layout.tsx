@@ -65,10 +65,9 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  // Set GOOGLE_SITE_VERIFICATION in the environment to verify Search Console.
-  verification: process.env.GOOGLE_SITE_VERIFICATION
-    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
-    : undefined,
+  verification: {
+    google: "siXqmYd1Q2TMOAMaciA74hvbZe4rEVaZ4V7duzlSEHc",
+  },
 };
 
 export default function RootLayout({
