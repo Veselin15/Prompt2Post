@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import { SITE_URL } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -11,6 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       // Authenticated app surface and API routes have nothing to index.
       disallow: ["/dashboard/", "/api/"],
     },
-    sitemap: `${siteUrl.replace(/\/$/, "")}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

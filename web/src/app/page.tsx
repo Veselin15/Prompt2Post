@@ -18,6 +18,7 @@ import InteractiveStudio from "@/components/landing/InteractiveStudio";
 import StatsBand from "@/components/landing/StatsBand";
 import Pricing from "@/components/landing/Pricing";
 import SiteFooter from "@/components/landing/SiteFooter";
+import { FAQ_ITEMS, faqJsonLd } from "@/lib/seo";
 
 const MARQUEE_TOPICS = [
   "5 mistakes killing your gym progress",
@@ -46,6 +47,7 @@ export default function LandingPage() {
           <a href="#studio" className="hover:text-white transition-colors">Live demo</a>
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+          <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
         </div>
         <div className="flex items-center gap-3 min-h-[36px]">
           <ClerkLoading>
@@ -308,6 +310,36 @@ export default function LandingPage() {
       <section id="pricing" className="relative z-10 max-w-5xl mx-auto px-6 py-16 scroll-mt-20">
         <Pricing />
       </section>
+
+      {/* ── FAQ ─────────────────────────────────────────────────────────── */}
+      <section id="faq" className="relative z-10 max-w-3xl mx-auto px-6 py-16 scroll-mt-20">
+        <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3">
+          Frequently asked questions
+        </h2>
+        <p className="text-white/50 text-center mb-12">
+          Everything you need to know about creating posts with Prompt2Post.
+        </p>
+        <div className="space-y-3">
+          {FAQ_ITEMS.map((item) => (
+            <details
+              key={item.question}
+              className="panel rounded-2xl px-5 py-4 group [&_summary::-webkit-details-marker]:hidden"
+            >
+              <summary className="flex items-center justify-between cursor-pointer list-none font-semibold text-white/90">
+                {item.question}
+                <ArrowRight className="w-4 h-4 text-white/40 transition-transform group-open:rotate-90" />
+              </summary>
+              <p className="text-white/55 text-sm leading-relaxed mt-3">{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ structured data — eligible for Google's FAQ rich result. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd()) }}
+      />
 
       {/* ── Final CTA ───────────────────────────────────────────────────── */}
       <section className="relative z-10 max-w-4xl mx-auto px-6 pb-24">

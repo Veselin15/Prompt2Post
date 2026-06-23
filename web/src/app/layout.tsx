@@ -2,36 +2,51 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import "./globals.css";
-
-// `||` (not `??`) so an empty-string env var falls through to the next option —
-// otherwise `new URL("")` below throws "Invalid URL" during the build.
-const siteUrl =
-  process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  organizationJsonLd,
+  websiteJsonLd,
+  softwareApplicationJsonLd,
+} from "@/lib/seo";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Prompt2Post – The AI content studio for Instagram creators",
     template: "%s · Prompt2Post",
   },
-  description:
-    "Type one topic and Prompt2Post plans, writes, designs, and schedules a scroll-stopping Instagram carousel — with on-brand copy, AI images, captions, and hashtags.",
-  applicationName: "Prompt2Post",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   keywords: [
     "AI Instagram carousel generator",
-    "social media post generator",
+    "Instagram carousel maker",
+    "AI social media post generator",
     "AI content studio",
-    "Instagram scheduler",
+    "Instagram post scheduler",
     "carousel maker",
+    "AI caption generator",
+    "social media content creator",
   ],
-  authors: [{ name: "Prompt2Post" }],
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "technology",
   alternates: { canonical: "/" },
+  formatDetection: { telephone: false, address: false, email: false },
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
   openGraph: {
     title: "Prompt2Post – The AI content studio for Instagram creators",
     description:
       "One topic in. A whole carousel out. AI plans, writes, designs, and schedules your Instagram posts.",
-    url: siteUrl,
-    siteName: "Prompt2Post",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    locale: "en_US",
     type: "website",
   },
   twitter: {
@@ -42,7 +57,18 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
+  // Set GOOGLE_SITE_VERIFICATION in the environment to verify Search Console.
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export default function RootLayout({
@@ -50,10 +76,21 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const structuredData = [
+    organizationJsonLd(),
+    websiteJsonLd(),
+    softwareApplicationJsonLd(),
+  ];
+
   return (
     <ClerkProvider>
       <html lang="en" className="dark">
         <body>
+          <script
+            type="application/ld+json"
+            // Site-wide identity markup (Organization, WebSite, SoftwareApplication).
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          />
           {children}
           <Toaster
             theme="dark"
