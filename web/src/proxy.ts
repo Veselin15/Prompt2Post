@@ -7,9 +7,17 @@ const isPublicRoute = createRouteMatcher([
   // Marketing & legal pages
   "/privacy",
   "/terms",
+  "/features",
+  "/pricing",
+  "/blog(.*)",
+  "/for/(.*)",
+  // Social preview images — extension-less routes, so the matcher runs on them
+  "/opengraph-image(.*)",
+  "/twitter-image(.*)",
   // SEO / discovery files and an unauthenticated health probe
   "/robots.txt",
   "/sitemap.xml",
+  "/llms.txt",
   "/api/health",
   "/api/webhooks/stripe",
   "/api/clerk/webhook",

@@ -1,0 +1,39 @@
+# Prompt2Post
+
+> Prompt2Post (https://prompt2post.app) is an AI content studio for Instagram creators. You type one topic and it plans the slide structure, writes the copy, generates photoreal images, composites pixel-perfect text, and adds a caption and hashtags — producing a finished, on-brand Instagram carousel in minutes.
+
+Key facts:
+- Free plan: 3 posts per month, no credit card required. Pro from €9/month (100 posts), Creator €29/month (unlimited).
+- Two-stage AI engine: develops a creative brief (tone, format, palette, slide count) before writing fact-rich copy per slide.
+- Images are generated with FLUX; headlines are composited as vector typography, so text is always crisp.
+- Brand Kit stores tone, colors, fonts, and language — every post is generated on-brand, one kit per client for agencies.
+- Slide Studio: rewrite any slide with AI, edit copy by hand, or regenerate one image without extra credits.
+- Idea Studio: describe a niche, get six ready-to-generate post ideas.
+- Writes posts in 13 languages. Formats: square (1:1), portrait (4:5), story (9:16), wide (1.91:1), 1–10 slides.
+- Repurpose: one click converts a carousel into an X post, LinkedIn post, Story hook, and a PDF for LinkedIn document posts.
+- Export as ZIP or PDF with captions; shareable review links per post. Direct Instagram publishing and scheduling are coming soon.
+
+## Pages
+
+- [Home](https://prompt2post.app/): product overview with a live demo of the generator
+- [Features](https://prompt2post.app/features): full feature tour
+- [Pricing](https://prompt2post.app/pricing): plans and pricing FAQ
+- [Blog](https://prompt2post.app/blog): guides on Instagram carousels, hashtags, and content planning
+
+## Use cases
+
+- [Fitness coaches](https://prompt2post.app/for/fitness-coaches)
+- [Real estate agents](https://prompt2post.app/for/real-estate-agents)
+- [Travel creators](https://prompt2post.app/for/travel-creators)
+- [Food bloggers](https://prompt2post.app/for/food-bloggers)
+- [Finance creators](https://prompt2post.app/for/finance-creators)
+- [Coaches & consultants](https://prompt2post.app/for/coaches-consultants)
+- [E-commerce brands](https://prompt2post.app/for/ecommerce-brands)
+- [Photographers](https://prompt2post.app/for/photographers)
+- [Marketing agencies](https://prompt2post.app/for/marketing-agencies)
+- [Beauty & skincare creators](https://prompt2post.app/for/beauty-creators)
+
+## Support
+
+- Email: support@prompt2post.app
+- Instagram: https://www.instagram.com/prompt2post.app/

@@ -45,8 +45,9 @@ export default function LandingPage() {
         <BrandLogo iconSize={42} textClassName="text-xl" />
         <div className="hidden md:flex items-center gap-7 text-sm text-white/55">
           <a href="#studio" className="hover:text-white transition-colors">Live demo</a>
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+          <Link href="/features" className="hover:text-white transition-colors">Features</Link>
+          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+          <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
           <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
         </div>
         <div className="flex items-center gap-3 min-h-[36px]">

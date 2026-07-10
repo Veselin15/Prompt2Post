@@ -18,45 +18,126 @@ function FacebookIcon({ className }: { className?: string }) {
   );
 }
 
+const PRODUCT_LINKS = [
+  { href: "/features", label: "Features" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/blog", label: "Blog" },
+  { href: "/sign-up", label: "Start free" },
+];
+
+const USE_CASE_LINKS = [
+  { href: "/for/fitness-coaches", label: "Fitness coaches" },
+  { href: "/for/real-estate-agents", label: "Real estate agents" },
+  { href: "/for/travel-creators", label: "Travel creators" },
+  { href: "/for/food-bloggers", label: "Food bloggers" },
+  { href: "/for/finance-creators", label: "Finance creators" },
+  { href: "/for/coaches-consultants", label: "Coaches & consultants" },
+];
+
+const MORE_USE_CASE_LINKS = [
+  { href: "/for/ecommerce-brands", label: "E-commerce brands" },
+  { href: "/for/photographers", label: "Photographers" },
+  { href: "/for/marketing-agencies", label: "Marketing agencies" },
+  { href: "/for/beauty-creators", label: "Beauty & skincare" },
+];
+
+const RESOURCE_LINKS = [
+  { href: "/blog/instagram-carousel-size-guide", label: "Carousel size guide" },
+  { href: "/blog/how-to-make-instagram-carousel", label: "How to make a carousel" },
+  { href: "/blog/instagram-carousel-ideas", label: "45 carousel ideas" },
+  { href: "/blog/instagram-hashtags-2026", label: "Hashtags in 2026" },
+];
+
 export default function SiteFooter() {
   return (
     <footer className="relative z-10 border-t border-white/10">
-      <div className="max-w-5xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-sm">
-        <BrandLogo iconSize={38} textClassName="text-lg" />
+      <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
+        <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
+          <BrandLogo iconSize={38} textClassName="text-lg" />
+          <p className="text-white/40 text-xs leading-relaxed">
+            The AI content studio for Instagram creators. One topic in, a whole carousel out.
+          </p>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://www.instagram.com/prompt2post.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Prompt2Post on Instagram"
+              className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <InstagramIcon className="w-4 h-4" />
+            </a>
+            <a
+              href="https://www.facebook.com/profile.php?id=61590463905836"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Prompt2Post on Facebook"
+              className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <FacebookIcon className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
 
-        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-white/55">
-          <a href="/#features" className="hover:text-white transition-colors">Features</a>
-          <a href="/#pricing" className="hover:text-white transition-colors">Pricing</a>
-          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-          <a href="mailto:support@prompt2post.app" className="inline-flex items-center gap-1.5 hover:text-white transition-colors">
-            <Mail className="w-3.5 h-3.5" /> support@prompt2post.app
-          </a>
+        <nav aria-label="Product">
+          <h3 className="font-semibold text-white/80 mb-3">Product</h3>
+          <ul className="space-y-2 text-white/50">
+            {PRODUCT_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
+              </li>
+            ))}
+          </ul>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <a
-            href="https://www.instagram.com/prompt2post.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Prompt2Post on Instagram"
-            className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <InstagramIcon className="w-4 h-4" />
-          </a>
-          <a
-            href="https://www.facebook.com/profile.php?id=61590463905836"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Prompt2Post on Facebook"
-            className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <FacebookIcon className="w-4 h-4" />
-          </a>
-        </div>
+        <nav aria-label="Use cases">
+          <h3 className="font-semibold text-white/80 mb-3">Made for</h3>
+          <ul className="space-y-2 text-white/50">
+            {USE_CASE_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <nav aria-label="More use cases">
+          <h3 className="font-semibold text-white/80 mb-3">Also for</h3>
+          <ul className="space-y-2 text-white/50">
+            {MORE_USE_CASE_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <nav aria-label="Resources">
+          <h3 className="font-semibold text-white/80 mb-3">Guides</h3>
+          <ul className="space-y-2 text-white/50">
+            {RESOURCE_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
-      <div className="border-t border-white/[0.06] py-5 text-center text-white/40 text-xs">
-        © 2026 Prompt2Post. The AI content studio for Instagram creators.
+
+      <div className="border-t border-white/[0.06] py-5">
+        <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-white/40 text-xs">
+          <span>© 2026 Prompt2Post. The AI content studio for Instagram creators.</span>
+          <span className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-white/70 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-white/70 transition-colors">Terms</Link>
+            <a
+              href="mailto:support@prompt2post.app"
+              className="inline-flex items-center gap-1.5 hover:text-white/70 transition-colors"
+            >
+              <Mail className="w-3.5 h-3.5" /> support@prompt2post.app
+            </a>
+          </span>
+        </div>
       </div>
     </footer>
   );

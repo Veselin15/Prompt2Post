@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Prompt2Post – The AI content studio for Instagram creators",
+    default: "Prompt2Post – AI Instagram Carousel Generator & Content Studio",
     template: "%s · Prompt2Post",
   },
   description: SITE_DESCRIPTION,
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     apple: "/icon.png",
   },
   openGraph: {
-    title: "Prompt2Post – The AI content studio for Instagram creators",
+    title: "Prompt2Post – AI Instagram Carousel Generator & Content Studio",
     description:
       "One topic in. A whole carousel out. AI plans, writes, designs, and schedules your Instagram posts.",
     url: SITE_URL,

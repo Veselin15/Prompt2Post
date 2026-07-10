@@ -8,7 +8,9 @@
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
-  "http://localhost:3000"
+  (process.env.NODE_ENV === "production"
+    ? "https://prompt2post.app"
+    : "http://localhost:3000")
 ).replace(/\/$/, "");
 
 export const SITE_NAME = "Prompt2Post";
@@ -92,14 +94,55 @@ export function softwareApplicationJsonLd() {
   };
 }
 
-export function faqJsonLd() {
+export function faqJsonLd(items: { question: string; answer: string }[] = FAQ_ITEMS) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: FAQ_ITEMS.map((item) => ({
+    mainEntity: items.map((item) => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: { "@type": "Answer", text: item.answer },
     })),
+  };
+}
+
+/** BreadcrumbList markup — pass paths relative to the site root, e.g. "/blog". */
+export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: `${SITE_URL}${item.path}`,
+    })),
+  };
+}
+
+/** Article markup for blog posts — eligible for article rich results. */
+export function articleJsonLd(article: {
+  title: string;
+  description: string;
+  path: string;
+  datePublished: string;
+  dateModified?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.description,
+    url: `${SITE_URL}${article.path}`,
+    datePublished: article.datePublished,
+    dateModified: article.dateModified ?? article.datePublished,
+    image: `${SITE_URL}/opengraph-image`,
+    author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}${article.path}` },
   };
 }
