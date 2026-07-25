@@ -218,7 +218,15 @@ function validateBrief(data: Record<string, unknown>): CreativeBrief | null {
  */
 export async function developBrief(
   topic: string,
-  opts: { tone: string; style: string; numSlides: number; colorMood: string; language?: string },
+  opts: {
+    tone: string;
+    style: string;
+    numSlides: number;
+    colorMood: string;
+    language?: string;
+    audience?: string;
+    goal?: string;
+  },
   retries = 2
 ): Promise<CreativeBrief | null> {
   let lastError: Error | null = null;
@@ -257,6 +265,7 @@ export async function writeContent(
   textAmount: string,
   language = "",
   brief: CreativeBrief | null = null,
+  steer: { audience?: string; goal?: string; emoji?: string } = {},
   retries = 3
 ): Promise<CreativeContent> {
   let lastError: Error | null = null;
@@ -271,7 +280,7 @@ export async function writeContent(
         model: writerModel(),
         messages: [
           { role: "system", content: WRITER_SYSTEM },
-          { role: "user", content: writerUserPrompt(topic, tone, style, postType, numSlides, colorMood, textAmount, language, brief) },
+          { role: "user", content: writerUserPrompt(topic, tone, style, postType, numSlides, colorMood, textAmount, language, brief, steer) },
         ],
         response_format: { type: "json_object" },
         // Hotter + dual penalties → more varied, less templated phrasing.

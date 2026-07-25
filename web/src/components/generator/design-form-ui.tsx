@@ -7,6 +7,8 @@ import {
   POST_FORMATS,
   type PostFormat,
   type TextAmount,
+  type Goal,
+  type EmojiLevel,
 } from "@/types";
 
 export const TONES = ["auto", "inspirational", "educational", "funny", "dramatic", "professional", "promotional"];
@@ -16,6 +18,8 @@ export const FORMAT_OPTIONS: ("auto" | PostFormat)[] = ["auto", "portrait", "squ
 export const AMOUNT_OPTIONS: TextAmount[] = ["minimal", "balanced", "detailed"];
 export const FONT_OPTIONS = ["modern", "editorial"] as const;
 export const ACCENTS = ["#8176fc", "#34e89e", "#ff5c8a", "#ffb020", "#3cc8ff", "#ffffff"];
+export const GOAL_OPTIONS: Goal[] = ["", "engagement", "education", "authority", "sales", "growth"];
+export const EMOJI_OPTIONS: EmojiLevel[] = ["none", "minimal", "expressive"];
 
 export function snapSlides(n: number | undefined, max: number): number {
   const allowed = SLIDE_COUNTS.filter((c) => c <= max);

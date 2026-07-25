@@ -130,15 +130,71 @@ export function plannerUserPrompt(
   return lines.join("\n");
 }
 
+// ── Copy-steering: audience / goal / emoji ────────────────────────────────────────
+// Shared helpers that make the copy targeted (audience), purposeful (goal) and
+// tonally consistent (emoji). Used by both the brief and the writer.
+
+const GOAL_GUIDE: Record<string, { brief: string; closer: string }> = {
+  engagement: {
+    brief: "Goal: maximise engagement — surface the most debate-worthy, save-worthy angles.",
+    closer: "the final slide must earn a reaction: end on a pointed question or a save-worthy takeaway that begs a comment or share.",
+  },
+  education: {
+    brief: "Goal: teach — prioritise the clearest, most genuinely useful facts and mechanisms.",
+    closer: "the final slide must land the single most useful, immediately-applicable takeaway.",
+  },
+  authority: {
+    brief: "Goal: build authority — favour insider knowledge and non-obvious expert insight.",
+    closer: "the final slide must state a sharp, opinionated point of view only a real expert would commit to.",
+  },
+  sales: {
+    brief: "Goal: drive action — build desire toward a concrete next step or offer.",
+    closer: "the final slide must name one concrete next step (soft, not pushy) — what to do now that they're convinced.",
+  },
+  growth: {
+    brief: "Goal: grow the account — deliver so much value the reader wants more from this creator.",
+    closer: "the final slide must give a clear reason to follow: tease the value of what comes next.",
+  },
+};
+
+const EMOJI_GUIDE: Record<string, string> = {
+  none: "EMOJI: use NO emojis anywhere — not in headlines, kickers, hook, hashtags, or the caption. Keep it clean and serious.",
+  minimal: "EMOJI: at most 1–2 tasteful emojis, and ONLY in the social_caption. Never in headlines or kickers.",
+  expressive: "EMOJI: use emojis with personality — a few across the social_caption and, where it truly fits, one in a kicker. Never in headlines. Stay tasteful, never spammy.",
+};
+
+/** Audience + goal steering shared by the brief and the writer. Empty when neither is set. */
+function audienceGoalLines(audience?: string, goal?: string): string[] {
+  const lines: string[] = [];
+  if (audience && audience.trim()) {
+    lines.push(
+      `AUDIENCE: write for ${audience.trim()}. Calibrate the prior knowledge you assume, the examples you reach for, and the vocabulary you use so this exact reader feels it was made for them.`
+    );
+  }
+  const g = goal ? GOAL_GUIDE[goal] : undefined;
+  if (g) lines.push(g.brief);
+  return lines;
+}
+
 export function briefUserPrompt(
   topic: string,
-  opts: { tone: string; style: string; numSlides: number; colorMood: string; language?: string }
+  opts: {
+    tone: string;
+    style: string;
+    numSlides: number;
+    colorMood: string;
+    language?: string;
+    audience?: string;
+    goal?: string;
+  }
 ): string {
   const languageRule = opts.language
     ? `\nThe final copy will be written in ${opts.language}, but write THIS brief in English (it only steers the writer and the image model).`
     : "";
+  const steering = audienceGoalLines(opts.audience, opts.goal);
+  const steeringBlock = steering.length ? `\n${steering.join("\n")}` : "";
   return `TOPIC: ${topic}
-Tone: ${opts.tone} | Style: ${opts.style} | Slides: ${opts.numSlides} | Palette: ${opts.colorMood}${languageRule}
+Tone: ${opts.tone} | Style: ${opts.style} | Slides: ${opts.numSlides} | Palette: ${opts.colorMood}${languageRule}${steeringBlock}
 
 Produce the creative brief. The "arc" array must contain exactly ${opts.numSlides} beats — one per slide.`;
 }
@@ -189,20 +245,31 @@ export function writerUserPrompt(
   colorMood: string,
   textAmount: string,
   language?: string,
-  brief?: Parameters<typeof briefBlock>[0] | null
+  brief?: Parameters<typeof briefBlock>[0] | null,
+  steer?: { audience?: string; goal?: string; emoji?: string }
 ): string {
   const amountGuide = TEXT_AMOUNT_GUIDE[textAmount] ?? TEXT_AMOUNT_GUIDE.balanced;
   const languageRule = language
     ? `\nLANGUAGE (mandatory): write ALL user-facing copy — kickers, headlines, body, hook, social_caption, hashtags — in ${language}. Keep "image_prompt" fields in English (they feed an image model).\n`
     : "";
   const briefSection = brief ? `\n${briefBlock(brief)}\n` : "";
+
+  // Copy-steering: who it's for, what it should achieve, and how much emoji.
+  const steerLines = audienceGoalLines(steer?.audience, steer?.goal);
+  const emojiRule = steer?.emoji ? EMOJI_GUIDE[steer.emoji] : undefined;
+  if (emojiRule) steerLines.push(emojiRule);
+  const steerSection = steerLines.length ? `\n${steerLines.join("\n")}\n` : "";
+
+  // The closing slide's job is set by the goal (falls back to a clean generic closer).
+  const goalCloser = steer?.goal ? GOAL_GUIDE[steer.goal]?.closer : undefined;
+  const closerRule = goalCloser ?? "the final slide lands a memorable closer or one clean CTA.";
   const structureRule =
     numSlides > 1
-      ? `Slide 1 is the COVER (title headline + one short curiosity hook line, NO facts); slides 2-${numSlides} carry the real content (one specific fact/step/tip each); slide ${numSlides} lands a memorable closer or CTA.`
-      : `This single slide is a complete standalone post — lead with the biggest surprise.`;
+      ? `Slide 1 is the COVER (title headline + one short curiosity hook line, NO facts); slides 2-${numSlides} carry the real content (one specific fact/step/tip each); on slide ${numSlides}, ${closerRule}`
+      : `This single slide is a complete standalone post — lead with the biggest surprise; ${closerRule}`;
   return `TOPIC: ${topic}
 Tone: ${tone} | Style: ${style} | Type: ${postType} | Slides: ${numSlides} | Palette: ${colorMood}
-${languageRule}${briefSection}
+${languageRule}${briefSection}${steerSection}
 TEXT AMOUNT (mandatory, applies to CONTENT slides):
 ${amountGuide}
 

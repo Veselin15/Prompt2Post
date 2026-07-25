@@ -60,6 +60,9 @@ export default async function CreatePage({
     headlineCase: kit.headlineCase || undefined,
     textAlign: kit.textAlign || undefined,
     language: kit.language || undefined,
+    audience: kit.audience || undefined,
+    goal: kit.goal || undefined,
+    emoji: kit.emoji || undefined,
     // URL layer (Idea Studio links, "Use as template") — wins over the kit
     topic: first(params.topic),
     ...(first(params.tone) ? { tone: first(params.tone) } : {}),
@@ -72,6 +75,9 @@ export default async function CreatePage({
     ...(first(params.fontTheme) ? { fontTheme: first(params.fontTheme) } : {}),
     ...(first(params.headlineCase) ? { headlineCase: first(params.headlineCase) } : {}),
     ...(first(params.textAlign) ? { textAlign: first(params.textAlign) } : {}),
+    ...(first(params.audience) ? { audience: first(params.audience) } : {}),
+    ...(first(params.goal) ? { goal: first(params.goal) } : {}),
+    ...(first(params.emoji) ? { emoji: first(params.emoji) } : {}),
     ...(Number.isFinite(slidesParam) && slidesParam > 0 ? { numSlides: slidesParam } : {}),
   };
 

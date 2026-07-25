@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { clsx } from "clsx";
-import { POST_FORMATS, OVERLAY_TEMPLATES, resolveFormat, resolveTemplate } from "@/types";
+import { POST_FORMATS, OVERLAY_TEMPLATES, GOALS, resolveFormat, resolveTemplate } from "@/types";
 import type { CreativeContent, PostStructure, Post, RepurposedContent } from "@/types";
 
 interface Props {
@@ -148,6 +148,8 @@ export default function ContentPanel({
             structure.post_type,
             `${POST_FORMATS[resolveFormat(structure.format)].label} · ${POST_FORMATS[resolveFormat(structure.format)].ratio}`,
             OVERLAY_TEMPLATES[resolveTemplate(structure.template)].label,
+            structure.audience ? `For: ${structure.audience}` : "",
+            structure.goal ? GOALS[structure.goal]?.label : "",
             structure.color_mood,
           ]
             .filter(Boolean)

@@ -12,6 +12,9 @@ export interface BrandKitPayload {
   headlineCase: string;
   textAlign: string;
   language: string;
+  audience: string;
+  goal: string;
+  emoji: string;
 }
 
 export async function saveBrandKit(payload: BrandKitPayload): Promise<BrandKit> {

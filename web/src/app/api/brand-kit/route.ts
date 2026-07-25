@@ -10,6 +10,9 @@ import {
   resolveHeadlineCase,
   resolveTextAlign,
   resolveLanguage,
+  resolveAudience,
+  resolveGoal,
+  resolveEmoji,
   type BrandKit,
 } from "@/types";
 
@@ -55,6 +58,9 @@ export async function PUT(req: NextRequest) {
     headlineCase: resolveHeadlineCase(body.headlineCase),
     textAlign: resolveTextAlign(body.textAlign),
     language: resolveLanguage(body.language),
+    audience: resolveAudience(body.audience),
+    goal: resolveGoal(body.goal),
+    emoji: resolveEmoji(body.emoji),
   };
 
   await saveUserBrandKit(userId, kit);

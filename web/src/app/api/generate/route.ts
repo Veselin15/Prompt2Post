@@ -25,6 +25,9 @@ import {
   resolveFormat,
   resolveTemplate,
   resolveLanguage,
+  resolveAudience,
+  resolveGoal,
+  resolveEmoji,
 } from "@/types";
 import type { GenerateEvent, SlideData } from "@/types";
 
@@ -47,6 +50,7 @@ export async function POST(req: NextRequest) {
   const {
     topic, tone, style, numSlides, format, template, accentColor, handle,
     textAmount, fontTheme, headlineCase, textAlign, language,
+    audience, goal, emoji,
   } = await req.json();
   if (!topic?.trim()) {
     return new Response(sse({ type: "error", error: "Topic is required" }), {
@@ -127,6 +131,15 @@ export async function POST(req: NextRequest) {
         : "modern";
       structure.headline_case = resolveHeadlineCase(headlineCase);
       structure.text_align = resolveTextAlign(textAlign);
+
+      // Copy-steering context (who it's for, what it should achieve, emoji level).
+      // Stored on the structure so per-slide re-writes stay on-brief.
+      const steerAudience = resolveAudience(audience);
+      const steerGoal = resolveGoal(goal);
+      const steerEmoji = resolveEmoji(emoji);
+      structure.audience = steerAudience;
+      structure.goal = steerGoal;
+      structure.emoji = steerEmoji;
       await send({ type: "structure", structure, progress: 16 });
 
       // ── 3a. Creative brief ───────────────────────────────────────────────
@@ -140,6 +153,8 @@ export async function POST(req: NextRequest) {
         numSlides: structure.num_slides,
         colorMood: structure.color_mood,
         language: resolveLanguage(language),
+        audience: steerAudience,
+        goal: steerGoal,
       });
 
       // ── 3b. Write creative content ────────────────────────────────────────
@@ -153,7 +168,8 @@ export async function POST(req: NextRequest) {
         structure.color_mood,
         structure.text_amount,
         resolveLanguage(language),
-        brief
+        brief,
+        { audience: steerAudience, goal: steerGoal, emoji: steerEmoji }
       );
       const { slides: rawSlides, ...contentMeta } = content;
       await send({ type: "content", content: contentMeta, progress: 32 });

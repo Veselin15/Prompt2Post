@@ -18,6 +18,9 @@ import {
   resolveHeadlineCase,
   resolveTextAlign,
   resolveLanguage,
+  resolveAudience,
+  resolveGoal,
+  resolveEmoji,
   type BrandKit,
   type OverlayTemplate,
   type PostFormat,
@@ -52,6 +55,9 @@ function kitToValues(kit: BrandKit | null): DesignOptionValues {
     headlineCase: resolveHeadlineCase(kit?.headlineCase),
     align: resolveTextAlign(kit?.textAlign),
     language: resolveLanguage(kit?.language),
+    audience: resolveAudience(kit?.audience),
+    goal: resolveGoal(kit?.goal),
+    emoji: resolveEmoji(kit?.emoji),
   };
 }
 
@@ -106,6 +112,9 @@ export default function BrandKitClient({ planKey, limits, initialKit }: Props) {
         headlineCase: values.headlineCase,
         textAlign: values.align,
         language: values.language,
+        audience: values.audience.trim(),
+        goal: values.goal,
+        emoji: values.emoji,
       });
       setSaved(true);
       toast.success("Brand Kit saved — new posts will start with this look");

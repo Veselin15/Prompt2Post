@@ -111,6 +111,63 @@ export function resolveAccent(value: unknown): string {
     : DEFAULT_ACCENT;
 }
 
+// ── Copy-steering controls (audience / goal / emoji) ─────────────────────────────
+// These shape WHAT the copy says and HOW it lands — the biggest levers on output
+// quality — without touching the visual design. They thread into the creative
+// brief and the writer prompt so the post is written FOR a specific reader with a
+// specific job to do, instead of a generic feed filler.
+
+/** Suggested audience chips. Free text is also accepted; "" = auto (broad reader). */
+export const AUDIENCE_PRESETS: string[] = [
+  "Beginners",
+  "Professionals",
+  "Founders",
+  "Students",
+  "Marketers",
+  "Creators",
+];
+
+/** Normalise an audience string: collapse whitespace, cap length. "" = auto. */
+export function resolveAudience(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+/** What the post is trying to achieve — steers the closing slide and the caption CTA. */
+export type Goal = "" | "engagement" | "education" | "authority" | "sales" | "growth";
+
+export const GOALS: Record<Exclude<Goal, "">, { label: string; hint: string }> = {
+  engagement: { label: "Spark engagement", hint: "Comments, shares & saves" },
+  education:  { label: "Educate", hint: "Teach something genuinely useful" },
+  authority:  { label: "Build authority", hint: "Position you as the expert" },
+  sales:      { label: "Drive action", hint: "Move readers toward an offer" },
+  growth:     { label: "Grow followers", hint: "Earn the follow for more" },
+};
+
+export function resolveGoal(value: unknown): Goal {
+  return value === "engagement" || value === "education" || value === "authority" ||
+    value === "sales" || value === "growth"
+    ? value
+    : "";
+}
+
+/** How much emoji personality the copy carries. */
+export type EmojiLevel = "none" | "minimal" | "expressive";
+
+export const EMOJI_LEVELS: Record<EmojiLevel, { label: string; hint: string }> = {
+  none:       { label: "None", hint: "No emojis anywhere — clean & serious" },
+  minimal:    { label: "Minimal", hint: "1–2 tasteful emojis in the caption" },
+  expressive: { label: "Expressive", hint: "Playful emoji use in the caption" },
+};
+
+export const DEFAULT_EMOJI: EmojiLevel = "minimal";
+
+export function resolveEmoji(value: unknown): EmojiLevel {
+  return value === "none" || value === "minimal" || value === "expressive"
+    ? value
+    : DEFAULT_EMOJI;
+}
+
 /** Normalise a social handle to "@something" (letters, numbers, dot, underscore). */
 export function resolveHandle(value: unknown): string {
   if (typeof value !== "string") return "";
@@ -133,6 +190,9 @@ export interface BrandKit {
   headlineCase?: HeadlineCase;
   textAlign?: TextAlign;
   language?: string;
+  audience?: string;
+  goal?: Goal;
+  emoji?: EmojiLevel;
 }
 
 export interface User {
@@ -208,6 +268,10 @@ export interface PostStructure {
   font_theme: FontTheme;
   headline_case: HeadlineCase;
   text_align: TextAlign;
+  /** Copy-steering context — optional, additive to the JSONB structure column. */
+  audience?: string;
+  goal?: Goal;
+  emoji?: EmojiLevel;
 }
 
 /** Cross-platform versions of a post, generated on demand and stored in content JSONB. */

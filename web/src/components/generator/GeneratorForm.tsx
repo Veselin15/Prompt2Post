@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Bookmark,
   Loader2,
+  Shuffle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -19,12 +20,17 @@ import {
   resolveHeadlineCase,
   resolveTextAlign,
   resolveLanguage,
+  resolveAudience,
+  resolveGoal,
+  resolveEmoji,
   type PostFormat,
   type OverlayTemplate,
   type TextAmount,
   type FontTheme,
   type HeadlineCase,
   type TextAlign,
+  type Goal,
+  type EmojiLevel,
   type Plan,
   type PlanLimits,
 } from "@/types";
@@ -49,6 +55,22 @@ const STARTERS = [
   "Why the ocean is blue",
 ];
 
+/** Fuller pool for the "Surprise me" shuffle — richer, more specific prompts. */
+const SURPRISE_TOPICS = [
+  "Why deep-sea creatures glow — and what they're really saying to each other",
+  "The psychology of why we procrastinate (and 3 fixes that actually work)",
+  "How compound interest quietly turns $5 a day into a fortune",
+  "5 morning habits of high-performing CEOs, backed by neuroscience",
+  "The forgotten engineering behind Roman concrete that still outlasts ours",
+  "What your sleep chronotype says about your ideal workday",
+  "The real reason Japanese trains are never late",
+  "How a single font change can make people trust you more",
+  "The counterintuitive science of building unbreakable habits",
+  "Why the best ideas come in the shower — the neuroscience of insight",
+  "How ancient navigators crossed the Pacific with no instruments",
+  "The hidden economics of why concert tickets cost what they do",
+];
+
 export interface GenerateOptions {
   topic: string;
   tone: string;
@@ -63,6 +85,9 @@ export interface GenerateOptions {
   headlineCase: string;
   textAlign: string;
   language: string;
+  audience: string;
+  goal: string;
+  emoji: string;
 }
 
 /** Initial form values — from the user's Brand Kit and/or an Idea Studio link. */
@@ -80,6 +105,9 @@ export interface FormPrefill {
   headlineCase?: string;
   textAlign?: string;
   language?: string;
+  audience?: string;
+  goal?: string;
+  emoji?: string;
 }
 
 interface Props {
@@ -135,6 +163,9 @@ export default function GeneratorForm({
   );
   const [align, setAlign] = useState<TextAlign>(() => resolveTextAlign(prefill?.textAlign));
   const [language, setLanguage] = useState(() => resolveLanguage(prefill?.language));
+  const [audience, setAudience] = useState(() => resolveAudience(prefill?.audience));
+  const [goal, setGoal] = useState<Goal>(() => resolveGoal(prefill?.goal));
+  const [emoji, setEmoji] = useState<EmojiLevel>(() => resolveEmoji(prefill?.emoji));
   const [showOptions, setShowOptions] = useState(true);
   const [savingStyle, setSavingStyle] = useState(false);
 
@@ -153,6 +184,9 @@ export default function GeneratorForm({
     headlineCase,
     align,
     language,
+    audience,
+    goal,
+    emoji,
   };
 
   function updateDesign<K extends keyof DesignOptionValues>(key: K, value: DesignOptionValues[K]) {
@@ -168,6 +202,9 @@ export default function GeneratorForm({
       case "headlineCase": setHeadlineCase(value as HeadlineCase); break;
       case "align": setAlign(value as TextAlign); break;
       case "language": setLanguage(value as string); break;
+      case "audience": setAudience(value as string); break;
+      case "goal": setGoal(value as Goal); break;
+      case "emoji": setEmoji(value as EmojiLevel); break;
     }
   }
 
@@ -210,6 +247,14 @@ export default function GeneratorForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topic, format, template, accent, fontTheme, headlineCase, align, textAmount, handle]);
 
+  /** Drop a rich, specific prompt into the topic box (never repeats the current one). */
+  function surpriseMe() {
+    const pool = SURPRISE_TOPICS.filter((t) => t !== topic.trim());
+    const next = pool[Math.floor(Math.random() * pool.length)] ?? SURPRISE_TOPICS[0];
+    setTopic(next);
+    textareaRef.current?.focus();
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!topic.trim() || isGenerating) return;
@@ -227,6 +272,9 @@ export default function GeneratorForm({
       headlineCase,
       textAlign: align,
       language,
+      audience: audience.trim(),
+      goal,
+      emoji,
     });
   }
 
@@ -247,6 +295,9 @@ export default function GeneratorForm({
         headlineCase,
         textAlign: align,
         language,
+        audience: audience.trim(),
+        goal,
+        emoji,
       });
       toast.success("Brand Kit saved — new posts will start with this look");
       router.refresh();
@@ -294,6 +345,14 @@ export default function GeneratorForm({
       {/* ── Starters ── */}
       {!isGenerating && (
         <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={surpriseMe}
+            className="flex items-center gap-1 text-xs bg-brand-600/15 hover:bg-brand-600/25 border border-brand-500/30 text-brand-200 px-2.5 py-1 rounded-lg transition-colors font-medium"
+          >
+            <Shuffle className="w-3 h-3" />
+            Surprise me
+          </button>
           {STARTERS.map((s) => (
             <button
               key={s}
