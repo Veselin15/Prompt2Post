@@ -1,5 +1,7 @@
 # 🚀 Prompt2Post
 
+🌐 **Live Website:** [https://prompt2post.app](https://prompt2post.app)
+
 > Turn any idea into a stunning social-media post — powered entirely by free AI.
 
 Prompt2Post is a **Universal Post Generator** that dynamically analyses your topic
