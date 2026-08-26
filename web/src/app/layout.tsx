@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -85,6 +86,18 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="dark">
         <body>
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-4F3DJVN80Y"
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-4F3DJVN80Y');
+            `}
+          </Script>
           <script
             type="application/ld+json"
             // Site-wide identity markup (Organization, WebSite, SoftwareApplication).
