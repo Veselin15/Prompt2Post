@@ -76,7 +76,10 @@ export default function SlideGallery({
   const activeSlide = showSlides[active];
   const allReady = readySlides.length > 0 && readySlides.length >= displayTotal && generating === -1;
 
-  const canEdit = editable && !!postId && !!activeSlide?.image_url && generating === -1;
+  // The branded outro slide has no AI copy or background to work from, so the
+  // rewrite/reimage/recompose controls don't apply to it.
+  const canEdit =
+    editable && !!postId && !!activeSlide?.image_url && !activeSlide?.is_outro && generating === -1;
   const activeImageUrl = withVersion(activeSlide?.image_url, versions[active]);
 
   async function saveOne() {

@@ -252,6 +252,7 @@ export interface SlideData {
   text_position: "top" | "center" | "bottom";
   text_size: "small" | "medium" | "large";
   image_url?: string;   // Supabase Storage URL after generation
+  is_outro?: boolean;   // branded closing slide — not user copy, not editable
 }
 
 export interface PostStructure {
@@ -363,6 +364,7 @@ export const PLAN_LIMITS: Record<Plan, {
   text_amounts: TextAmount[];       // which text-density options are allowed
   watermark: boolean;               // @handle watermark on images
   custom_accent: boolean;           // full colour-picker (vs preset swatches only)
+  outro_branding: boolean;          // append a "Made with Prompt2Post" closing slide
   history_days: number;             // post history retention (-1 = unlimited)
 }> = {
   free: {
@@ -378,6 +380,7 @@ export const PLAN_LIMITS: Record<Plan, {
     text_amounts: ["minimal", "balanced"],
     watermark: false,
     custom_accent: false,
+    outro_branding: true,
     history_days: 7,
   },
   pro: {
@@ -393,6 +396,7 @@ export const PLAN_LIMITS: Record<Plan, {
     text_amounts: ["minimal", "balanced", "detailed"],
     watermark: true,
     custom_accent: true,
+    outro_branding: false,
     history_days: 30,
   },
   creator: {
@@ -408,6 +412,7 @@ export const PLAN_LIMITS: Record<Plan, {
     text_amounts: ["minimal", "balanced", "detailed"],
     watermark: true,
     custom_accent: true,
+    outro_branding: false,
     history_days: -1,
   },
 };

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { planStructure, developBrief, writeContent } from "@/lib/ai/groq";
 import { fetchImageBuffer, genDimensions } from "@/lib/image/pollinations";
 import { composeSlide } from "@/lib/image/compositor";
+import { composeOutroSlide } from "@/lib/image/outro";
 import { uploadSlideImage, uploadSlideBackground, uploadZip, deletePostFiles } from "@/lib/image/storage";
 import {
   createPost,
@@ -193,6 +194,10 @@ export async function POST(req: NextRequest) {
 
       // ── 5. Generate + compose slides ──────────────────────────────────────
       const total = rawSlides.length;
+      // Free plans get a branded closing slide appended, so the count the UI
+      // counts toward is one higher than the number of AI-generated slides.
+      const outroCount = limits.outro_branding ? 1 : 0;
+      const displayTotal = total + outroCount;
       // Pre-allocate so parallel writes land in the right index slots
       composedSlides = new Array(total);
       const imageBuffers: { name: string; data: Buffer }[] = new Array(total);
@@ -246,7 +251,7 @@ export async function POST(req: NextRequest) {
 
         await send({
           type: "slide",
-          slide: { ...composedSlide, index: i, total },
+          slide: { ...composedSlide, index: i, total: displayTotal },
           progress: Math.round(progressBase + (i + 1) * progressPerSlide),
         });
       };
@@ -271,6 +276,47 @@ export async function POST(req: NextRequest) {
         // Free / Pro — sequential generation
         for (let i = 0; i < rawSlides.length; i++) {
           await processSlide(rawSlides[i], i);
+        }
+      }
+
+      // ── 5b. Branded outro slide (free plan) ───────────────────────────────
+      // Rendered locally from vector paths — no image API call, so it costs
+      // nothing and adds ~no time. Purely additive: a failure here must never
+      // sink an otherwise-successful generation.
+      if (outroCount) {
+        try {
+          await send({ type: "status", message: "Adding your closing slide…", progress: 90 });
+          const outroIndex = composedSlides.length;
+          const outroBuf = await composeOutroSlide({
+            width: fmt.width,
+            height: fmt.height,
+            accentColor: structure.accent_color,
+          });
+          const outroUrl = await uploadSlideImage(post.id, outroIndex + 1, outroBuf);
+          imageBuffers.push({
+            name: `slide_${String(outroIndex + 1).padStart(2, "0")}.jpg`,
+            data: outroBuf,
+          });
+
+          const outroSlide: SlideData = {
+            slide_number: outroIndex + 1,
+            headline: "",
+            body: "",
+            image_prompt: "",
+            text_position: "center",
+            text_size: "medium",
+            image_url: outroUrl,
+            is_outro: true,
+          };
+          composedSlides.push(outroSlide);
+
+          await send({
+            type: "slide",
+            slide: { ...outroSlide, index: outroIndex, total: displayTotal },
+            progress: 91,
+          });
+        } catch (outroErr) {
+          console.error("Outro slide failed (continuing without it):", outroErr);
         }
       }
 

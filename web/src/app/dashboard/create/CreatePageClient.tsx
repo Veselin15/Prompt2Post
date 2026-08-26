@@ -144,6 +144,9 @@ export default function CreatePageClient({ planKey, limits, postsThisMonth, pref
       case "slide": {
         const s = event.slide;
         if (!s) break;
+        // s.total includes the branded outro slide on free plans, which the
+        // planner's num_slides doesn't know about — trust the stream.
+        setTotalSlides(s.total);
         setGeneratingSlideIndex(s.index + 1 < s.total ? s.index + 1 : -1);
         setSlides((prev) => {
           const next = [...prev];
