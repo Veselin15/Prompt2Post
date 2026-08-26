@@ -27,7 +27,7 @@ import {
 } from "./prompts";
 
 /** Always-available, proven model — also the fallback if a fancier model errors. */
-const SAFE_MODEL = "llama-3.3-70b-versatile";
+const SAFE_MODEL = "openai/gpt-oss-120b";
 /** Planner/structure model (cheap, fast). */
 const plannerModel = () => process.env.GROQ_MODEL ?? SAFE_MODEL;
 /**
