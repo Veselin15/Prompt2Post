@@ -68,12 +68,16 @@ type CreateParams = Parameters<Groq["chat"]["completions"]["create"]>[0];
  */
 async function createCompletion(params: CreateParams): Promise<string> {
   const groq = getClient();
+  // Thinking-mode models (e.g. qwen3.6) can burn the whole token budget on a
+  // reasoning trace and leave the JSON content empty — these calls need the
+  // final answer, not a reasoning transcript, so always disable it.
+  const withoutThinking = { ...params, reasoning_effort: "none" } as CreateParams;
   try {
-    const res = await groq.chat.completions.create(params);
+    const res = await groq.chat.completions.create(withoutThinking);
     return (res as { choices: { message: { content: string | null } }[] }).choices[0].message.content ?? "{}";
   } catch (err) {
     if (isModelError(err) && params.model !== SAFE_MODEL) {
-      const res = await groq.chat.completions.create({ ...params, model: SAFE_MODEL });
+      const res = await groq.chat.completions.create({ ...withoutThinking, model: SAFE_MODEL });
       return (res as { choices: { message: { content: string | null } }[] }).choices[0].message.content ?? "{}";
     }
     throw err;
