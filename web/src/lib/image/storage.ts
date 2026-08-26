@@ -1,4 +1,4 @@
-import { mkdir, writeFile, readFile, rm } from "fs/promises";
+import { mkdir, writeFile, readFile, rm, readdir, stat } from "fs/promises";
 import path from "path";
 import JSZip from "jszip";
 
@@ -106,6 +106,39 @@ export async function rebuildZip(postId: string, slideCount: number): Promise<st
     if (data) buffers.push({ name: slideFilename(n), data });
   }
   return uploadZip(postId, buffers);
+}
+
+/**
+ * Delete expired `demo-*` folders left behind by the anonymous try-it endpoint.
+ * Those runs are never written to the database, so their images are the only
+ * trace of them and nothing references one once the visitor leaves the page.
+ * Best-effort — a failure here is logged by the caller, never fatal.
+ */
+export async function pruneDemoFiles(maxAgeMs = 24 * 60 * 60 * 1000): Promise<number> {
+  const root = path.join(STORAGE_ROOT, "posts");
+  let removed = 0;
+  let entries: string[];
+  try {
+    entries = await readdir(root);
+  } catch {
+    return 0; // storage dir doesn't exist yet
+  }
+
+  const cutoff = Date.now() - maxAgeMs;
+  for (const name of entries) {
+    if (!name.startsWith("demo-")) continue;
+    const dir = path.join(root, name);
+    try {
+      const info = await stat(dir);
+      if (info.mtimeMs < cutoff) {
+        await rm(dir, { recursive: true, force: true });
+        removed++;
+      }
+    } catch {
+      // Raced with another prune, or unreadable — skip it.
+    }
+  }
+  return removed;
 }
 
 /** Remove every file belonging to a post (called when the post is deleted). */

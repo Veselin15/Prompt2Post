@@ -17,6 +17,7 @@ export default function MarketingShell({ children }: { children: React.ReactNode
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 glass border-t-0 border-l-0 border-r-0">
         <BrandLogo iconSize={42} textClassName="text-xl" />
         <div className="hidden md:flex items-center gap-7 text-sm text-white/55">
+          <Link href="/try" className="hover:text-white transition-colors">Try free</Link>
           <Link href="/features" className="hover:text-white transition-colors">Features</Link>
           <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>

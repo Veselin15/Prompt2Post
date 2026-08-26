@@ -105,18 +105,18 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
             <Link
-              href="/sign-up"
+              href="/try"
               className="btn-shine inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-semibold px-8 py-3.5 rounded-2xl text-base transition-all duration-200 hover:scale-[1.02] shadow-lg shadow-brand-700/25"
             >
-              Create your first post free
+              Generate one free — no sign-up
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <a
-              href="#studio"
+            <Link
+              href="/sign-up"
               className="inline-flex items-center justify-center gap-2 bg-white/[0.05] hover:bg-white/10 border border-white/10 text-white/80 font-medium px-8 py-3.5 rounded-2xl text-base transition-colors"
             >
-              Watch it build a post
-            </a>
+              Create a free account
+            </Link>
           </div>
         </div>
       </section>

@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
   "/terms",
   "/features",
   "/pricing",
+  "/try",
   "/blog(.*)",
   "/for/(.*)",
   // Social preview images — extension-less routes, so the matcher runs on them
@@ -19,6 +20,8 @@ const isPublicRoute = createRouteMatcher([
   "/sitemap.xml",
   "/llms.txt",
   "/api/health",
+  // Anonymous "try it without signing up" generator (rate-limited in-route)
+  "/api/try",
   "/api/webhooks/stripe",
   "/api/clerk/webhook",
   "/api/files(.*)",
