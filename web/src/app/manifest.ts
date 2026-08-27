@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
       "Type one topic and get a scroll-stopping Instagram carousel — AI plans, writes, designs, and schedules it.",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#0a0a0f",
+    background_color: "#08080d",
     theme_color: "#6750f8",
     icons: [
       { src: "/icon.png", sizes: "374x374", type: "image/png", purpose: "any" },

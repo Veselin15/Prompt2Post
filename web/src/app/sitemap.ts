@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo";
 import { NICHES } from "@/lib/marketing/niches";
 import { ARTICLES } from "@/lib/marketing/articles";
+import { TOOLS } from "@/lib/marketing/tools";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -25,6 +26,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
+  // Keyword landing pages — the entry points for "instagram carousel ai
+  // generator/maker/creator" searches, so they rank just under the homepage.
+  const tools: MetadataRoute.Sitemap = TOOLS.map((t) => ({
+    url: `${SITE_URL}/${t.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.9,
+  }));
+
   const articles: MetadataRoute.Sitemap = ARTICLES.map((a) => ({
     url: `${SITE_URL}/blog/${a.slug}`,
     lastModified: new Date(`${a.datePublished}T00:00:00Z`),
@@ -32,5 +42,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...core, ...niches, ...articles];
+  return [...core, ...tools, ...niches, ...articles];
 }

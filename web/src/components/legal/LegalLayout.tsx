@@ -12,7 +12,7 @@ export default function LegalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#08080d] text-white overflow-x-hidden">
       <div className="ambient" aria-hidden />
 
       <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 glass border-t-0 border-l-0 border-r-0">

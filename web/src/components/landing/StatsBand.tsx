@@ -58,7 +58,7 @@ function Counter({ stat, run }: { stat: Stat; run: boolean }) {
   }, [run, stat.to]);
 
   return (
-    <div className="text-3xl sm:text-4xl font-black gradient-text">
+    <div className="font-display text-3xl font-black gradient-text sm:text-4xl">
       {stat.to === null
         ? stat.display
         : `${stat.prefix ?? ""}${val}${stat.suffix ?? ""}`}
@@ -69,16 +69,15 @@ function Counter({ stat, run }: { stat: Stat; run: boolean }) {
 export default function StatsBand() {
   const { ref, seen } = useInView<HTMLDivElement>();
   return (
-    <div
-      ref={ref}
-      className="max-w-4xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center"
-    >
-      {STATS.map((s) => (
-        <div key={s.label}>
-          <Counter stat={s} run={seen} />
-          <div className="text-white/40 text-xs mt-1.5 leading-snug">{s.label}</div>
-        </div>
-      ))}
+    <div ref={ref} className="mx-auto max-w-4xl px-6">
+      <div className="panel grid grid-cols-2 gap-y-8 px-6 py-8 text-center sm:grid-cols-4 sm:divide-x sm:divide-white/[0.07]">
+        {STATS.map((s) => (
+          <div key={s.label} className="px-2">
+            <Counter stat={s} run={seen} />
+            <div className="mt-2 text-xs leading-snug text-white/40">{s.label}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -7,7 +7,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-[#0a0a0f]">
+    <div className="flex h-[100dvh] overflow-hidden bg-[#08080d]">
       <Sidebar />
       <CommandPaletteLazy />
       {/* pt-14 clears the fixed mobile top bar; desktop has the sidebar instead */}

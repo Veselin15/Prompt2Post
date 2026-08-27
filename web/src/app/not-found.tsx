@@ -3,7 +3,7 @@ import { Sparkles, ArrowLeft, Home } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="relative min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center px-6 overflow-hidden">
+    <div className="relative min-h-screen bg-[#08080d] text-white flex items-center justify-center px-6 overflow-hidden">
       <div className="ambient" aria-hidden />
       <div className="grid-fade" aria-hidden />
       <div className="relative z-10 text-center max-w-md">

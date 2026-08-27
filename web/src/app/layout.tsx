@@ -15,19 +15,24 @@ import {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Prompt2Post – AI Instagram Carousel Generator & Content Studio",
+    // Keyword first: the phrase people search is what should be visible in
+    // the SERP before Google truncates the title.
+    default: "AI Instagram Carousel Generator — Prompt2Post",
     template: "%s · Prompt2Post",
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   keywords: [
     "AI Instagram carousel generator",
+    "Instagram carousel AI creator",
     "Instagram carousel maker",
+    "AI carousel generator",
+    "free Instagram carousel generator",
+    "AI Instagram post generator",
     "AI social media post generator",
+    "Instagram caption generator",
+    "Instagram carousel templates",
     "AI content studio",
-    "Instagram post scheduler",
-    "carousel maker",
-    "AI caption generator",
     "social media content creator",
   ],
   authors: [{ name: SITE_NAME }],
@@ -42,7 +47,7 @@ export const metadata: Metadata = {
     apple: "/icon.png",
   },
   openGraph: {
-    title: "Prompt2Post – AI Instagram Carousel Generator & Content Studio",
+    title: "AI Instagram Carousel Generator — Prompt2Post",
     description:
       "One topic in. A whole carousel out. AI plans, writes, designs, and schedules your Instagram posts.",
     url: SITE_URL,

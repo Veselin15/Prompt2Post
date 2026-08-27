@@ -118,7 +118,7 @@ export default async function BlogArticlePage({
               <Clock className="w-3 h-3" /> {article.readMinutes} min read
             </span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight mb-4">
+          <h1 className="text-section font-display mb-4">
             {article.title}
           </h1>
           {article.intro.map((p) => (

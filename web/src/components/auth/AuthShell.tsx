@@ -9,7 +9,7 @@ interface Props {
 
 export default function AuthShell({ loadingLabel, children }: Props) {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#0a0a0f] px-4 py-12 overflow-hidden">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#08080d] px-4 py-12 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] rounded-full bg-brand-600/10 blur-[120px]" />
         <div className="absolute top-0 right-0 w-[320px] h-[320px] rounded-full bg-purple-600/6 blur-[100px]" />

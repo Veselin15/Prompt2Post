@@ -66,7 +66,7 @@ export default async function NichePage({
         <div className="inline-flex items-center gap-2 text-xs bg-white/[0.04] border border-white/10 px-3 py-1.5 rounded-full mb-6 text-white/60 capitalize">
           Prompt2Post for {niche.audience}
         </div>
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-6 leading-[1.08]">
+        <h1 className="text-display font-display mb-6">
           {niche.h1}
         </h1>
         {niche.intro.map((p) => (
@@ -106,7 +106,7 @@ export default async function NichePage({
 
       {/* Example topics */}
       <section className="max-w-4xl mx-auto px-6 mt-20 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-3 capitalize">
+        <h2 className="text-2xl sm:text-3xl mb-3 capitalize">
           Carousel topics {niche.audience} generate with Prompt2Post
         </h2>
         <p className="text-white/50 mb-8">
@@ -153,7 +153,7 @@ export default async function NichePage({
 
       {/* FAQ */}
       <section className="max-w-3xl mx-auto px-6 mt-20">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 capitalize">
+        <h2 className="text-2xl sm:text-3xl text-center mb-8 capitalize">
           Questions from {niche.audience}
         </h2>
         <div className="space-y-3">

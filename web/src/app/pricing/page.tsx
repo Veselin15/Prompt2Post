@@ -82,7 +82,7 @@ export default function PricingPage() {
       />
 
       <section className="max-w-4xl mx-auto px-6 text-center mb-4">
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-6 leading-[1.08]">
+        <h1 className="text-display font-display mb-6">
           Pricing that scales
           <br />
           <span className="gradient-text-animated">with your content</span>
@@ -94,11 +94,11 @@ export default function PricingPage() {
       </section>
 
       <section className="max-w-5xl mx-auto px-6 mt-10">
-        <Pricing />
+        <Pricing showHeading={false} />
       </section>
 
       <section className="max-w-3xl mx-auto px-6 mt-20">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">Pricing questions</h2>
+        <h2 className="text-2xl sm:text-3xl text-center mb-8">Pricing questions</h2>
         <div className="space-y-3">
           {PRICING_FAQ.map((item) => (
             <details

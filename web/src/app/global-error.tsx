@@ -20,7 +20,7 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body style={{ margin: 0, background: "#0a0a0f", color: "#fff", fontFamily: "system-ui, sans-serif" }}>
+      <body style={{ margin: 0, background: "#08080d", color: "#fff", fontFamily: "system-ui, sans-serif" }}>
         <div
           style={{
             minHeight: "100vh",

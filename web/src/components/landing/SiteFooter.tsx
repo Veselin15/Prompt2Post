@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import { Mail } from "lucide-react";
+import { TOOLS } from "@/lib/marketing/tools";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -21,9 +22,15 @@ function FacebookIcon({ className }: { className?: string }) {
 const PRODUCT_LINKS = [
   { href: "/features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/try", label: "Try free" },
   { href: "/blog", label: "Blog" },
   { href: "/sign-up", label: "Start free" },
 ];
+
+/* Keyword landing pages. Linking them from every page in the site is what
+   tells Google they matter — a page reachable only from the sitemap tends to
+   be treated as an afterthought. */
+const TOOL_LINKS = TOOLS.map((t) => ({ href: `/${t.slug}`, label: t.h1 }));
 
 const USE_CASE_LINKS = [
   { href: "/for/fitness-coaches", label: "Fitness coaches" },
@@ -51,7 +58,7 @@ const RESOURCE_LINKS = [
 export default function SiteFooter() {
   return (
     <footer className="relative z-10 border-t border-white/10">
-      <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
+      <div className="max-w-6xl mx-auto px-6 py-14 grid grid-cols-2 gap-8 text-sm md:grid-cols-6">
         <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
           <BrandLogo iconSize={38} textClassName="text-lg" />
           <p className="text-white/40 text-xs leading-relaxed">
@@ -78,6 +85,17 @@ export default function SiteFooter() {
             </a>
           </div>
         </div>
+
+        <nav aria-label="AI tools">
+          <h3 className="font-semibold text-white/80 mb-3">AI tools</h3>
+          <ul className="space-y-2 text-white/50">
+            {TOOL_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         <nav aria-label="Product">
           <h3 className="font-semibold text-white/80 mb-3">Product</h3>
@@ -125,7 +143,7 @@ export default function SiteFooter() {
       </div>
 
       <div className="border-t border-white/[0.06] py-5">
-        <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-white/40 text-xs">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-white/40 text-xs">
           <span>© 2026 Prompt2Post. The AI content studio for Instagram creators.</span>
           <span className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-white/70 transition-colors">Privacy</Link>

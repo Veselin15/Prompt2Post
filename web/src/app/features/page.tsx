@@ -115,7 +115,7 @@ export default function FeaturesPage() {
       />
 
       <section className="max-w-4xl mx-auto px-6 text-center mb-16">
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-6 leading-[1.08]">
+        <h1 className="text-display font-display mb-6">
           Every step from idea to post,
           <br />
           <span className="gradient-text-animated">handled by AI</span>
@@ -149,7 +149,7 @@ export default function FeaturesPage() {
       </section>
 
       <section className="max-w-3xl mx-auto px-6 mt-20 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4">Built for your niche</h2>
+        <h2 className="text-2xl sm:text-3xl mb-4">Built for your niche</h2>
         <p className="text-white/50 mb-8">
           See how creators in your field use Prompt2Post day to day.
         </p>

@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { TOOL_SLUGS } from "@/lib/marketing/tools";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -11,6 +12,10 @@ const isPublicRoute = createRouteMatcher([
   "/pricing",
   "/try",
   "/blog(.*)",
+  // Root-level keyword landing pages (/ai-instagram-carousel-generator, …).
+  // Listed from the data file so adding a tool page cannot silently leave it
+  // behind an auth wall — which would make it uncrawlable.
+  ...TOOL_SLUGS.map((slug) => `/${slug}`),
   "/for/(.*)",
   // Social preview images — extension-less routes, so the matcher runs on them
   "/opengraph-image(.*)",

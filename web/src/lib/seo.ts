@@ -146,3 +146,63 @@ export function articleJsonLd(article: {
     mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}${article.path}` },
   };
 }
+
+/**
+ * HowTo markup for the step lists on the keyword landing pages. Google can
+ * surface these as a step-by-step rich result for "how to ..." style queries,
+ * which is exactly how people phrase the search that should find those pages.
+ */
+export function howToJsonLd(howTo: {
+  name: string;
+  description: string;
+  path: string;
+  steps: { title: string; text: string }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: howTo.name,
+    description: howTo.description,
+    url: `${SITE_URL}${howTo.path}`,
+    totalTime: "PT1M",
+    supply: [],
+    tool: [{ "@type": "HowToTool", name: SITE_NAME }],
+    step: howTo.steps.map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: s.title,
+      text: s.text,
+      url: `${SITE_URL}${howTo.path}#step-${i + 1}`,
+    })),
+  };
+}
+
+/**
+ * WebApplication markup for a single tool page — narrower than the site-wide
+ * SoftwareApplication block, so each landing page describes the specific tool
+ * a searcher asked for.
+ */
+export function webApplicationJsonLd(tool: {
+  name: string;
+  description: string;
+  path: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: tool.name,
+    description: tool.description,
+    url: `${SITE_URL}${tool.path}`,
+    applicationCategory: "DesignApplication",
+    operatingSystem: "Web",
+    browserRequirements: "Requires JavaScript. Requires a modern browser.",
+    isAccessibleForFree: true,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      description: "Free plan — create up to 3 posts every month.",
+    },
+    publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+  };
+}

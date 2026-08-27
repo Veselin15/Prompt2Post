@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 /* Self-hosted fonts — the exact files the server composites with, so the
-   in-app live preview matches generated images. */
+   in-app live preview matches generated images. Poppins doubles as the
+   display face for the marketing site, so the brand reads the same on the
+   page and on the slides it produces. */
 @font-face {
   font-family: "Poppins Display";
   src: url("/fonts/Poppins-ExtraBold.ttf") format("truetype");
@@ -27,6 +29,28 @@
   :root {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
+
+    /* ── Surfaces ────────────────────────────────────────────────────────
+       One ink value plus a ladder of translucent layers on top of it. Every
+       card, nav and input picks a rung instead of inventing its own alpha,
+       which is what kept the old page from reading as a single system. */
+    --ink: #08080d;
+    --ink-raised: #0c0c14;
+    --layer-1: rgba(255, 255, 255, 0.035);
+    --layer-2: rgba(255, 255, 255, 0.06);
+    --layer-3: rgba(255, 255, 255, 0.09);
+    --edge: rgba(255, 255, 255, 0.09);
+    --edge-strong: rgba(255, 255, 255, 0.16);
+
+    /* ── Accents ─────────────────────────────────────────────────────── */
+    --violet: #8b3ede;
+    --violet-bright: #a970f2;
+    --azure: #1b75b8;
+    --ember: #f07030;
+
+    /* ── Type ────────────────────────────────────────────────────────── */
+    --font-display: "Poppins Display", "Segoe UI", system-ui, sans-serif;
+    --font-serif: "DM Serif Display", Georgia, "Times New Roman", serif;
   }
 
   * {
@@ -38,12 +62,23 @@
   }
 
   body {
-    @apply bg-[#0a0a0f] text-white antialiased;
+    @apply text-white antialiased;
+    background-color: var(--ink);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
+  /* Headings carry the display face by default so individual components
+     don't each have to remember to opt in. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
   ::selection {
-    @apply bg-brand-500/40 text-white;
+    background: rgba(139, 62, 222, 0.45);
+    @apply text-white;
   }
 
   /* Custom scrollbar only on desktop — defining ::-webkit-scrollbar on mobile
@@ -62,13 +97,55 @@
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-brand-400/60 ring-offset-2 ring-offset-[#0a0a0f];
+    @apply outline-none ring-2 ring-brand-400/60 ring-offset-2;
+    --tw-ring-offset-color: var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer utilities {
+  /* ── Type utilities ─────────────────────────────────────────────────── */
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  .font-editorial {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  /* Fluid display sizes — one clamp instead of three breakpoint overrides. */
+  .text-display {
+    font-size: clamp(2.75rem, 7.2vw, 5rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+  }
+  .text-section {
+    font-size: clamp(1.9rem, 4vw, 2.9rem);
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+  }
+  /* All-caps micro label used above section headings. */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase text-white/45;
+    letter-spacing: 0.18em;
+  }
+
+  /* ── Surfaces ───────────────────────────────────────────────────────── */
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    background: rgba(12, 12, 20, 0.62);
+    border: 1px solid var(--edge);
+    @apply backdrop-blur-xl;
   }
   .glass-hover {
     @apply hover:bg-white/8 transition-colors duration-200;
@@ -76,12 +153,39 @@
 
   /* Lightweight card surface — looks like glass but has NO backdrop-blur, so
      it doesn't re-composite on every scroll frame. Use this for the many
-     landing cards; reserve real .glass for the few elements over content. */
+     landing cards; reserve real .glass for the few elements over content.
+     The ::before is a 1px top sheen, which is what makes a flat translucent
+     rectangle read as a raised physical panel. */
+  /* The radius lives in a zero-specificity :where() below so that a
+     `rounded-3xl` on the same element still wins — otherwise .panel, being
+     emitted after Tailwind's radius utilities, silently overrode them. */
   .panel {
-    @apply rounded-2xl border border-white/10 bg-white/[0.035];
+    position: relative;
+    border: 1px solid var(--edge);
+    background: linear-gradient(180deg, var(--layer-2), var(--layer-1));
+  }
+  .panel::before,
+  .panel-strong::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.22),
+      transparent
+    );
+    pointer-events: none;
   }
   .panel-strong {
-    @apply rounded-2xl border border-white/[0.12] bg-white/[0.055];
+    position: relative;
+    border: 1px solid var(--edge-strong);
+    background: linear-gradient(180deg, var(--layer-3), var(--layer-1));
+  }
+  :where(.panel, .panel-strong) {
+    border-radius: 1rem;
   }
 
   /* Hide scrollbars while keeping scroll/drag — for horizontal chip rows, etc. */
@@ -101,9 +205,20 @@
     z-index: 0;
     pointer-events: none;
     background:
-      radial-gradient(60% 50% at 50% -8%,  rgba(139, 62, 222, 0.20), transparent 70%),
-      radial-gradient(45% 45% at 92%  8%,  rgba(240, 112, 48, 0.14), transparent 70%),
-      radial-gradient(50% 50% at  6% 18%,  rgba(27, 117, 184, 0.14), transparent 70%);
+      radial-gradient(52% 42% at 50% -6%, rgba(139, 62, 222, 0.26), transparent 68%),
+      radial-gradient(38% 38% at 94% 6%, rgba(240, 112, 48, 0.14), transparent 70%),
+      radial-gradient(42% 42% at 4% 16%, rgba(27, 117, 184, 0.16), transparent 70%),
+      radial-gradient(60% 40% at 50% 104%, rgba(139, 62, 222, 0.10), transparent 70%);
+  }
+  /* Film grain over the gradients — kills the banding that large soft radial
+     gradients show on 8-bit displays, and adds a bit of texture. */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.26;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
   }
   /* Subtle dotted grid, also paint-once. */
   .grid-fade {
@@ -116,6 +231,17 @@
     mask-image: radial-gradient(circle at 50% 12%, black, transparent 78%);
     -webkit-mask-image: radial-gradient(circle at 50% 12%, black, transparent 78%);
   }
+  /* Hairline rule that fades at both ends — section separator. */
+  .rule-fade {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.14),
+      transparent
+    );
+  }
+
   .gradient-text {
     background: linear-gradient(to right, #1B75B8, #8B3EDE, #F07030);
     -webkit-background-clip: text;
@@ -164,9 +290,10 @@
   }
   .hover-lift:hover {
     transform: translateY(-3px);
+    border-color: rgba(154, 94, 238, 0.32);
     box-shadow:
-      0 12px 32px -12px rgba(139, 62, 222, 0.28),
-      0 0 0 1px rgba(154, 94, 238, 0.20);
+      0 18px 44px -18px rgba(139, 62, 222, 0.45),
+      0 0 0 1px rgba(154, 94, 238, 0.16);
   }
 
   /* Primary button with a light sweep on hover */
@@ -188,6 +315,27 @@
   }
   .btn-shine:hover::after {
     transform: translateX(120%);
+  }
+
+  /* The one primary action style, so every CTA on the site matches. */
+  .btn-primary {
+    @apply btn-shine inline-flex items-center justify-center gap-2 rounded-full font-semibold text-white transition-transform duration-200;
+    background: linear-gradient(135deg, #9A5EEE 0%, #7B26CE 55%, #6A16BE 100%);
+    box-shadow:
+      0 10px 30px -10px rgba(123, 38, 206, 0.75),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px) scale(1.015);
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-medium text-white/80 transition-colors duration-200;
+    background: var(--layer-2);
+    border: 1px solid var(--edge);
+  }
+  .btn-secondary:hover {
+    background: var(--layer-3);
+    @apply text-white;
   }
 
   /* Fixed, slowly-breathing aurora backdrop (mount once per page) */
@@ -266,6 +414,19 @@
   }
   .animate-float-slow {
     animation: float 10s ease-in-out 0.6s infinite;
+  }
+
+  /* Scroll-reveal: elements start shifted, then a one-shot IntersectionObserver
+     (components/landing/Reveal.tsx) adds .is-visible. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
   }
 }
 
